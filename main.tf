@@ -17,7 +17,7 @@ resource "google_project_service" "cloud_resource_manager" {
 
 # Grant IAM roles to ClickHouse Management SA
 resource "google_project_iam_member" "clickhouse_sa_roles" {
-  for_each = toset(local.clickhouse_custom_roles)
+  for_each = local.clickhouse_custom_roles
 
   depends_on = [google_project_service.cloud_resource_manager]
   project    = var.project_id
