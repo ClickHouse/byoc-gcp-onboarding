@@ -8,7 +8,7 @@ variable "region" {
   description = "Deployment region. This value is passed in by Infrastructure Manager."
 
   validation {
-    condition = contains(["us-east1"], var.region)
+    condition     = contains(["us-east1"], var.region)
     error_message = "Region must be one of: us-east1"
   }
 }
