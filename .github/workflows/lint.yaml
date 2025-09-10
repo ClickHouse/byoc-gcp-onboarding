@@ -1,0 +1,25 @@
+name: Lint
+
+on:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    name: Validate terraform configuration
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Terraform validate
+        uses: dflook/terraform-validate@v2
+
+  fmt-check:
+    runs-on: ubuntu-latest
+    name: Check formatting of terraform files
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Terraform fmt check
+        uses: dflook/terraform-fmt-check@v2
