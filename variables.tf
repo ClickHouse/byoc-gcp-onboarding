@@ -1,11 +1,11 @@
 variable "project_id" {
   type        = string
-  description = "The GCP project ID where resources will be deployed. This value is passed in by Infrastructure Manager."
+  description = "(Required) The GCP project ID where resources will be deployed"
 }
 
 variable "region" {
   type        = string
-  description = "Deployment region. This value is passed in by Infrastructure Manager."
+  description = "(Required) Deployment region"
 
   validation {
     condition     = contains(["us-east1"], var.region)
@@ -15,7 +15,7 @@ variable "region" {
 
 variable "environment" {
   type        = string
-  description = "Environment. This value is passed in by Infrastructure Manager."
+  description = "(Optional) Environment. Default is `production`. The other values are reserved for internal use"
   default     = "production"
 
   validation {
