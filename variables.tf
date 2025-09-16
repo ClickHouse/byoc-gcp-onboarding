@@ -14,7 +14,7 @@ variable "region" {
         "europe-west4",
         "us-central1",
         "us-east1",
-      ], var.region)
+    ], var.region)
     error_message = "Region must be one of: asia-southeast1, europe-west4, us-central1, us-east1"
   }
 }

@@ -49,6 +49,13 @@ resource "google_project_iam_custom_role" "clickhouse_vpc_role" {
     "compute.networks.use",
     "compute.networks.useExternalIp",
 
+    # serviceAttachments
+    "compute.serviceAttachments.get",
+    "compute.serviceAttachments.delete",
+    "compute.serviceAttachments.create",
+    "compute.serviceAttachments.list",
+    "compute.serviceAttachments.update",
+
     # Subnetwork
     "compute.subnetworks.create",
     "compute.subnetworks.createTagBinding",
