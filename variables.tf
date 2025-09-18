@@ -1,22 +1,6 @@
 variable "project_id" {
   type        = string
-  description = "(Required) The GCP project ID where resources will be deployed"
-}
-
-variable "region" {
-  type        = string
-  description = "(Required) Deployment region"
-
-  validation {
-    condition = contains(
-      [
-        "asia-southeast1",
-        "europe-west4",
-        "us-central1",
-        "us-east1",
-    ], var.region)
-    error_message = "Region must be one of: asia-southeast1, europe-west4, us-central1, us-east1"
-  }
+  description = "(Required) The GCP project ID where resources will be provisioned"
 }
 
 variable "environment" {
