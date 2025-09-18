@@ -1,7 +1,3 @@
-provider "google" {
-  project = var.project_id
-}
-
 # Create Clickhouse Management SA
 resource "google_service_account" "clickhouse_management_sa" {
   account_id   = "clickhouse-management"
@@ -29,7 +25,5 @@ resource "google_project_iam_member" "clickhouse_sa_roles" {
 resource "google_service_account_iam_binding" "impersonation_binding" {
   service_account_id = google_service_account.clickhouse_management_sa.name
   role               = "roles/iam.serviceAccountTokenCreator"
-  members = [
-    "serviceAccount:${var.region}-gke-crossplane@dataplane-${var.environment}.iam.gserviceaccount.com"
-  ]
+  members            = local.clickhouse_crossplane_sa_map[var.environment]
 }

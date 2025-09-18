@@ -5,10 +5,13 @@ This repository contains Terraform module to bootstrap a BYOC GCP project for Cl
 ## Usage
 
 ```hcl
+provider "google" {
+  project = "replace-with-your-clickhouse-byoc-project-id"
+}
+
 module "clickhouse_onboarding" {
-  source      = "github.com/ClickHouse/byoc-gcp-onboarding.git?ref=main"
-  project_id  = "ch-byoc-test-3842"
-  region      = "us-east1"
+  source     = "github.com/ClickHouse/byoc-gcp-onboarding.git?ref=main"
+  project_id = "replace-with-your-clickhouse-byoc-project-id"
 }
 ```
 
@@ -16,8 +19,7 @@ module "clickhouse_onboarding" {
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| project_id | (Required) The GCP project ID where resources will be deployed | string | n/a | yes |
-| region | (Required) Deployment region. The list of available BYOC regions: https://clickhouse.com/docs/cloud/reference/supported-regions#google-cloud-regions | string | n/a | yes |
+| project_id | (Required) The GCP project ID where resources will be provisioned | string | n/a | yes |
 | environment | (Optional) Environment. Default is `production`. The other values are reserved for internal use | string | `production` | no |
 
 ## Outputs
@@ -51,5 +53,3 @@ module "clickhouse_onboarding" {
 |------|---------|
 | terraform | >=1.3 |
 | google provider | >=6.38.0, <7 |
-
-
