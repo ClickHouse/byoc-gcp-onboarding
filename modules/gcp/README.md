@@ -10,7 +10,7 @@ provider "google" {
 }
 
 module "clickhouse_onboarding" {
-  source     = "github.com/ClickHouse/byoc-gcp-onboarding.git//modules/gcp?ref=v1.0.0"
+  source     = "github.com/ClickHouse/terraform-byoc-onboarding.git//modules/gcp?ref=v1.0.0"
   project_id = "replace-with-your-clickhouse-byoc-project-id"
 }
 ```
