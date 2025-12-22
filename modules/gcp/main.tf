@@ -11,6 +11,12 @@ resource "google_project_service" "cloud_resource_manager" {
   disable_on_destroy = false
 }
 
+# Enable Compute Engine API
+resource "google_project_service" "compute_engine" {
+  service            = "compute.googleapis.com"
+  disable_on_destroy = false
+}
+
 # Grant IAM roles to ClickHouse Management SA
 resource "google_project_iam_member" "clickhouse_sa_roles" {
   for_each = local.clickhouse_custom_roles
