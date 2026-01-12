@@ -19,3 +19,15 @@ resource "azurerm_role_assignment" "this" {
   role_definition_name = "Owner"
   principal_id         = azuread_service_principal.this.object_id
 }
+
+# Get Microsoft Graph service principal
+data "azuread_service_principal" "microsoft_graph" {
+  client_id = "00000003-0000-0000-c000-000000000000" # Microsoft Graph
+}
+
+# Grant Application.ReadWrite.All permission to the service principal
+resource "azuread_app_role_assignment" "application_readwrite" {
+  app_role_id         = "1bfefb4e-e0b5-418b-a88f-73c46d2cc8e9" # Application.ReadWrite.All https://learn.microsoft.com/en-us/graph/permissions-reference#applicationreadwriteall
+  principal_object_id = azuread_service_principal.this.object_id
+  resource_object_id  = data.azuread_service_principal.microsoft_graph.object_id
+}
