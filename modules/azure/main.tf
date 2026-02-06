@@ -1,4 +1,11 @@
 data "azuread_client_config" "current" {}
+data "azurerm_client_config" "current" {}
+data "azurerm_subscription" "current" {
+  subscription_id = data.azurerm_client_config.current.subscription_id
+}
+data "azuread_service_principal" "microsoft_graph" {
+  client_id = "00000003-0000-0000-c000-000000000000" # Microsoft Graph
+}
 
 # Create a service principle of the BYOC application
 resource "azuread_service_principal" "this" {
@@ -7,22 +14,11 @@ resource "azuread_service_principal" "this" {
   owners = [data.azuread_client_config.current.object_id]
 }
 
-data "azurerm_subscription" "it" {
-  for_each        = toset(var.subscriptions)
-  subscription_id = each.value
-}
-
 # Assign proper role definitions to the service principle
 resource "azurerm_role_assignment" "this" {
-  for_each             = toset(var.subscriptions)
-  scope                = data.azurerm_subscription.it[each.key].id
-  role_definition_name = "Owner"
-  principal_id         = azuread_service_principal.this.object_id
-}
-
-# Get Microsoft Graph service principal
-data "azuread_service_principal" "microsoft_graph" {
-  client_id = "00000003-0000-0000-c000-000000000000" # Microsoft Graph
+  scope              = data.azurerm_subscription.current.id
+  role_definition_id = azurerm_role_definition.crossplane_byoc_provisioner.role_definition_resource_id
+  principal_id       = azuread_service_principal.this.object_id
 }
 
 # Grant Microsoft Graph permissions to the service principal
