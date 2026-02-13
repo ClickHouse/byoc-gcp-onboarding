@@ -2,6 +2,8 @@
 
 This repository contains Terraform module to bootstrap a BYOC Azure tenant & subscription for ClickHouse Cloud.
 
+In accordance with Azure guidance for cross-tenant authentication, the module provisions the multitenant application as an Enterprise Application (service principal) in the target tenant and assigns it the required permissions scoped to the target subscription. This allows the ClickHouse provisioner to create Azure resources in the target subscription.
+
 ## Usage
 
 ```hcl
@@ -41,6 +43,18 @@ provider "azurerm" {
 module "clickhouse_onboarding" {
   source = "github.com/ClickHouse/terraform-byoc-onboarding.git//modules/azure"
 }
+
+output "tenant_id" {
+  value = module.clickhouse_onboarding.tenant_id
+}
+
+output "subscription_id" {
+  value = module.clickhouse_onboarding.subscription_id
+}
+
+output "service_principal_client_id" {
+  value = module.clickhouse_onboarding.service_principal_client_id
+}
 ```
 
 ## Inputs
@@ -62,8 +76,8 @@ module "clickhouse_onboarding" {
 | Name | Description |
 |------|------|
 | azuread_service_principal.this | Service Principal for ClickHouse BYOC application |
-| azurerm_role_definition.crossplane_byoc_provisioner | Custom role for Crossplane to provision Azure BYOC infrastructure resources |
-| azurerm_role_assignment.this | Assigns Crossplane BYOC Provisioner role to the service principal |
+| azurerm_role_definition.clickhouse_byoc_provisioner | Custom role for ClickHouse to provision Azure BYOC infrastructure resources |
+| azurerm_role_assignment.this | Assigns 'ClickHouse BYOC Provisioner' role to the service principal |
 | azuread_app_role_assignment.graph_permissions["Application.ReadWrite.All"] | Grants Application.ReadWrite.All Microsoft Graph permission |
 | azuread_app_role_assignment.graph_permissions["User.Invite.All"] | Grants User.Invite.All Microsoft Graph permission |
 | azuread_app_role_assignment.graph_permissions["User.ReadWrite.All"] | Grants User.ReadWrite.All Microsoft Graph permission |
@@ -75,4 +89,3 @@ module "clickhouse_onboarding" {
 | terraform | >=1.3 |
 | azuread provider | >=2.0 |
 | azurerm provider | >=3.0 |
-

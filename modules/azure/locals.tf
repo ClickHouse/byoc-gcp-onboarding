@@ -1,6 +1,8 @@
 locals {
   clickhouse_byoc_app_registration_map = {
     "development" = "8b46064b-904c-4f95-9bea-bafff8d5dcc7"
+    "staging"     = "34ea6e0e-f1f8-47b0-9d5b-851cfffe02d5"
+    "production"  = "a3a33a9e-cea2-47e6-a160-fd2add78f73e"
   }
 
   # https://learn.microsoft.com/en-us/graph/permissions-reference
