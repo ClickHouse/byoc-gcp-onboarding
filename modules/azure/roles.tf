@@ -1,10 +1,16 @@
 resource "azurerm_role_definition" "clickhouse_byoc_provisioner" {
-  name        = "ClickHouse BYOC Provisioner"
+  name        = "ClickHouse BYOC Provisioner (${var.environment})"
   scope       = "/subscriptions/${data.azurerm_client_config.current.subscription_id}"
   description = "Least-privilege custom role for ClickHouse to provision Azure BYOC infrastructure resources"
 
   permissions {
     actions = [
+      # Resource Provider Registration
+      "Microsoft.Network/register/action",
+      "Microsoft.ContainerService/register/action",
+      "Microsoft.ManagedIdentity/register/action",
+      "Microsoft.Storage/register/action",
+
       # Resource Groups
       "Microsoft.Resources/subscriptions/resourceGroups/read",
       "Microsoft.Resources/subscriptions/resourceGroups/write",
@@ -49,6 +55,7 @@ resource "azurerm_role_definition" "clickhouse_byoc_provisioner" {
       "Microsoft.Storage/storageAccounts/blobServices/containers/read",
       "Microsoft.Storage/storageAccounts/blobServices/containers/write",
       "Microsoft.Storage/storageAccounts/blobServices/containers/delete",
+      "Microsoft.Storage/storageAccounts/fileServices/read",
 
       # AKS Clusters & Node Pools
       "Microsoft.ContainerService/managedClusters/read",
