@@ -1,7 +1,7 @@
-resource "azurerm_role_definition" "crossplane_byoc_provisioner" {
-  name        = "Crossplane BYOC Provisioner"
+resource "azurerm_role_definition" "clickhouse_byoc_provisioner" {
+  name        = "ClickHouse BYOC Provisioner"
   scope       = "/subscriptions/${data.azurerm_client_config.current.subscription_id}"
-  description = "Least-privilege custom role for Crossplane to provision Azure BYOC infrastructure resources"
+  description = "Least-privilege custom role for ClickHouse to provision Azure BYOC infrastructure resources"
 
   permissions {
     actions = [

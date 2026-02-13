@@ -17,7 +17,7 @@ resource "azuread_service_principal" "this" {
 # Assign proper role definitions to the service principle
 resource "azurerm_role_assignment" "this" {
   scope              = data.azurerm_subscription.current.id
-  role_definition_id = azurerm_role_definition.crossplane_byoc_provisioner.role_definition_resource_id
+  role_definition_id = azurerm_role_definition.clickhouse_byoc_provisioner.role_definition_resource_id
   principal_id       = azuread_service_principal.this.object_id
 }
 
