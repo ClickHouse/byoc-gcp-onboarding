@@ -37,6 +37,15 @@ resource "azurerm_role_definition" "clickhouse_byoc_provisioner" {
       "Microsoft.Network/natGateways/delete",
       "Microsoft.Network/natGateways/join/action",
 
+      # NSG
+      "Microsoft.Network/networkSecurityGroups/read",
+      "Microsoft.Network/networkSecurityGroups/write",
+      "Microsoft.Network/networkSecurityGroups/delete",
+      "Microsoft.Network/networkSecurityGroups/join/action",
+      "Microsoft.Network/networkSecurityGroups/securityRules/read",
+      "Microsoft.Network/networkSecurityGroups/securityRules/write",
+      "Microsoft.Network/networkSecurityGroups/securityRules/delete",
+
       # DNS Zones
       "Microsoft.Network/dnszones/read",
       "Microsoft.Network/dnszones/write",
