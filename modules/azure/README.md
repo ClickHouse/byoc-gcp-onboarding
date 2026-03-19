@@ -41,7 +41,7 @@ provider "azurerm" {
 }
 
 module "clickhouse_onboarding" {
-  source = "github.com/ClickHouse/terraform-byoc-onboarding.git//modules/azure?ref=v1.1.0"
+  source = "github.com/ClickHouse/terraform-byoc-onboarding.git//modules/azure?ref=v1.1.1"
 }
 
 output "tenant_id" {
