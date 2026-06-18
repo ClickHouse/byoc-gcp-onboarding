@@ -7,8 +7,9 @@ locals {
 
   # https://learn.microsoft.com/en-us/graph/permissions-reference
   graph_permissions = {
-    "Application.ReadWrite.All" = "1bfefb4e-e0b5-418b-a88f-73c46d2cc8e9"
-    "User.Invite.All"           = "09850681-111b-4a89-9bed-3f2cae46d706"
-    "User.ReadWrite.All"        = "741f803b-c850-494e-b5df-cde7c675a1ca"
+    # OwnedBy (not .All): provisioner only manages apps/SPs it creates and owns
+    "Application.ReadWrite.OwnedBy" = "18a4783c-866b-4cc7-a460-3d5e5662c884"
+    "User.Invite.All"               = "09850681-111b-4a89-9bed-3f2cae46d706"
+    "User.ReadWrite.All"            = "741f803b-c850-494e-b5df-cde7c675a1ca"
   }
 }

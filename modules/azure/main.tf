@@ -19,6 +19,33 @@ resource "azurerm_role_assignment" "this" {
   scope              = data.azurerm_subscription.current.id
   role_definition_id = azurerm_role_definition.clickhouse_byoc_provisioner.role_definition_resource_id
   principal_id       = azuread_service_principal.this.object_id
+
+  # Constrained delegation: the provisioner may create/delete role assignments,
+  # but NOT for the privileged roles (Owner, Contributor, User Access Admin,
+  # RBAC Admin) — removes the escalate-to-Owner path while leaving the scoped
+  # data-plane and dynamic per-instance custom-role assignments unaffected.
+  condition_version = "2.0"
+  condition         = <<-EOT
+    (
+     (
+      !(ActionMatches{'Microsoft.Authorization/roleAssignments/write'})
+     )
+     OR
+     (
+      @Request[Microsoft.Authorization/roleAssignments:RoleDefinitionId] ForAnyOfAllValues:GuidNotEquals {8e3af657-a8ff-443c-a75c-2fe8c4bcb635, b24988ac-6180-42a0-ab88-20f7382dd24c, 18d7d88d-d35e-4fb5-a5c3-7773c20a72d9, f58310d9-a9f6-439a-9e8d-f62e7b41a168}
+     )
+    )
+    AND
+    (
+     (
+      !(ActionMatches{'Microsoft.Authorization/roleAssignments/delete'})
+     )
+     OR
+     (
+      @Resource[Microsoft.Authorization/roleAssignments:RoleDefinitionId] ForAnyOfAllValues:GuidNotEquals {8e3af657-a8ff-443c-a75c-2fe8c4bcb635, b24988ac-6180-42a0-ab88-20f7382dd24c, 18d7d88d-d35e-4fb5-a5c3-7773c20a72d9, f58310d9-a9f6-439a-9e8d-f62e7b41a168}
+     )
+    )
+  EOT
 }
 
 # Grant Microsoft Graph permissions to the service principal
