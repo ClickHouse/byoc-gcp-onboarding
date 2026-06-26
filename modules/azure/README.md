@@ -79,8 +79,6 @@ output "service_principal_client_id" {
 | azurerm_role_definition.clickhouse_byoc_provisioner | Custom role for ClickHouse to provision Azure BYOC infrastructure resources |
 | azurerm_role_assignment.this | Assigns 'ClickHouse BYOC Provisioner' role to the service principal |
 | azuread_app_role_assignment.graph_permissions["Application.ReadWrite.OwnedBy"] | Grants Application.ReadWrite.OwnedBy Microsoft Graph permission |
-| azuread_app_role_assignment.graph_permissions["User.Invite.All"] | Grants User.Invite.All Microsoft Graph permission |
-| azuread_app_role_assignment.graph_permissions["User.ReadWrite.All"] | Grants User.ReadWrite.All Microsoft Graph permission |
 
 ## Requirements
 
