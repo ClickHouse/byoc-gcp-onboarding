@@ -7,9 +7,13 @@ locals {
 
   # https://learn.microsoft.com/en-us/graph/permissions-reference
   graph_permissions = {
-    # OwnedBy (not .All): provisioner only manages apps/SPs it creates and owns
+    # OwnedBy (not .All): provisioner only manages apps/SPs it creates and owns.
+    # Used for the AKS workload-identity Application/ServicePrincipal — unrelated to
+    # engineer access.
     "Application.ReadWrite.OwnedBy" = "18a4783c-866b-4cc7-a460-3d5e5662c884"
-    "User.Invite.All"               = "09850681-111b-4a89-9bed-3f2cae46d706"
-    "User.ReadWrite.All"            = "741f803b-c850-494e-b5df-cde7c675a1ca"
+    # User.Invite.All / User.ReadWrite.All removed (BYOC-480): engineer access is now
+    # granted via per-engineer in-cluster Kubernetes ServiceAccounts + short-lived
+    # bound tokens, not Entra B2B guest invitations — so no directory/Graph user
+    # permission is required for engineer access.
   }
 }
