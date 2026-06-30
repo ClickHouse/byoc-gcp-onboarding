@@ -9,3 +9,18 @@ output "clickhouse_management_sa_roles" {
   ]
   description = "List of role IDs assigned to the ClickHouse Management Service Account"
 }
+
+output "shared_vpc_enabled" {
+  value       = local.shared_vpc
+  description = "Whether Shared VPC host-project resources were provisioned (true when network_project_id is set)"
+}
+
+output "shared_vpc_host_role" {
+  value       = one(google_project_iam_custom_role.clickhouse_shared_vpc_host_role[*].id)
+  description = "The ID of the ClickHouse Shared VPC host role granted in the host project, or null when Shared VPC is not used"
+}
+
+output "gke_service_agent_member" {
+  value       = local.shared_vpc ? local.gke_service_agent_member : null
+  description = "The service project's GKE service agent granted access to the Shared VPC host project, or null when Shared VPC is not used"
+}
