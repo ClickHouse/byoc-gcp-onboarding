@@ -31,3 +31,9 @@ variable "private_subnet_id" {
   description = "(Optional) The name of the existing Shared VPC host subnet used for GKE nodes. Required only when `network_project_id` is set."
   default     = ""
 }
+
+variable "enable_private_link" {
+  type        = bool
+  description = "(Optional) Set to true if you will use ClickHouse Private Service Connect (PrivateLink) with this Shared VPC. Grants the additional host-project permissions needed to create and manage the PSC NAT subnet (subnets in a Shared VPC belong to the host project). Only takes effect when `network_project_id` is set; leave false to keep the host-project permission surface minimal."
+  default     = false
+}
