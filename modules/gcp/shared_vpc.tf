@@ -65,13 +65,6 @@ data "google_project" "service" {
 resource "google_project_iam_custom_role" "clickhouse_shared_vpc_host_role" {
   count = local.shared_vpc ? 1 : 0
 
-  lifecycle {
-    precondition {
-      condition     = var.region != "" && var.private_subnet_id != ""
-      error_message = "region and private_subnet_id are required when network_project_id is set."
-    }
-  }
-
   project     = var.network_project_id
   role_id     = "clickhouseSharedVPCHostRole"
   title       = "ClickHouse Shared VPC Host Role"
@@ -116,6 +109,16 @@ resource "google_compute_subnetwork_iam_member" "network_user" {
     cloudservices     = local.cloudservices_sa_member
     management_sa     = google_service_account.clickhouse_management_sa.member
   } : {}
+
+  # region and private_subnet_id are consumed here, so this is where we assert
+  # they were supplied alongside network_project_id (Terraform < 1.9 can't do
+  # cross-variable validation in the variable block itself).
+  lifecycle {
+    precondition {
+      condition     = var.region != "" && var.private_subnet_id != ""
+      error_message = "region and private_subnet_id are required when network_project_id is set."
+    }
+  }
 
   depends_on = [google_project_service.container]
   project    = var.network_project_id
