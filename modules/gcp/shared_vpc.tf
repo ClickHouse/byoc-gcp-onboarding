@@ -1,5 +1,5 @@
 # Shared VPC support: granted only when the VPC you bring lives in a separate
-# host project (network_project_id set). All resources here target that host
+# host project (shared_vpc_host_project_id set). All resources here target that host
 # project via their explicit project/region/subnetwork arguments, so the
 # single google provider's credentials must have IAM admin on both projects.
 #
@@ -7,12 +7,12 @@
 # as a Shared VPC host and this project attached as a service project.
 
 locals {
-  shared_vpc = var.network_project_id != ""
+  shared_vpc = var.shared_vpc_host_project_id != ""
 
   # PSC host-project permissions apply only when both Shared VPC is in use and
   # the customer intends to use PrivateLink. When PrivateLink is off we keep the
   # host-project permission surface to the read-only observe set below.
-  enable_psc_host = local.shared_vpc && var.enable_private_link
+  enable_psc_host = local.shared_vpc && var.enable_shared_vpc_private_link
 
   # GKE service agents of the service project (this project). These are
   # well-known, derived from the project number, and must be granted access to
@@ -65,7 +65,7 @@ data "google_project" "service" {
 resource "google_project_iam_custom_role" "clickhouse_shared_vpc_host_role" {
   count = local.shared_vpc ? 1 : 0
 
-  project     = var.network_project_id
+  project     = var.shared_vpc_host_project_id
   role_id     = "clickhouseSharedVPCHostRole"
   title       = "ClickHouse Shared VPC Host Role"
   description = "Role to allow ClickHouse Cloud to observe the Shared VPC host network/subnet (and manage the PrivateLink PSC NAT subnet when enabled)"
@@ -75,7 +75,7 @@ resource "google_project_iam_custom_role" "clickhouse_shared_vpc_host_role" {
 resource "google_project_iam_member" "clickhouse_sa_shared_vpc_host_role" {
   count = local.shared_vpc ? 1 : 0
 
-  project = var.network_project_id
+  project = var.shared_vpc_host_project_id
   role    = google_project_iam_custom_role.clickhouse_shared_vpc_host_role[0].id
   member  = google_service_account.clickhouse_management_sa.member
 }
@@ -95,7 +95,7 @@ resource "google_project_iam_member" "gke_host_service_agent_user" {
   count = local.shared_vpc ? 1 : 0
 
   depends_on = [google_project_service.container]
-  project    = var.network_project_id
+  project    = var.shared_vpc_host_project_id
   role       = "roles/container.hostServiceAgentUser"
   member     = local.gke_service_agent_member
 }
@@ -110,20 +110,20 @@ resource "google_compute_subnetwork_iam_member" "network_user" {
     management_sa     = google_service_account.clickhouse_management_sa.member
   } : {}
 
-  # region and private_subnet_id are consumed here, so this is where we assert
-  # they were supplied alongside network_project_id (Terraform < 1.9 can't do
+  # The region/subnet are consumed here, so this is where we assert they were
+  # supplied alongside shared_vpc_host_project_id (Terraform < 1.9 can't do
   # cross-variable validation in the variable block itself).
   lifecycle {
     precondition {
-      condition     = var.region != "" && var.private_subnet_id != ""
-      error_message = "region and private_subnet_id are required when network_project_id is set."
+      condition     = var.shared_vpc_host_subnet_region != "" && var.shared_vpc_host_private_subnet_id != ""
+      error_message = "shared_vpc_host_subnet_region and shared_vpc_host_private_subnet_id are required when shared_vpc_host_project_id is set."
     }
   }
 
   depends_on = [google_project_service.container]
-  project    = var.network_project_id
-  region     = var.region
-  subnetwork = var.private_subnet_id
+  project    = var.shared_vpc_host_project_id
+  region     = var.shared_vpc_host_subnet_region
+  subnetwork = var.shared_vpc_host_private_subnet_id
   role       = "roles/compute.networkUser"
   member     = each.value
 }

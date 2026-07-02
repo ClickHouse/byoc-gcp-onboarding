@@ -12,7 +12,7 @@ output "clickhouse_management_sa_roles" {
 
 output "shared_vpc_enabled" {
   value       = local.shared_vpc
-  description = "Whether Shared VPC host-project resources were provisioned (true when network_project_id is set)"
+  description = "Whether Shared VPC host-project resources were provisioned (true when shared_vpc_host_project_id is set)"
 }
 
 output "shared_vpc_host_role" {
