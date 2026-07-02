@@ -14,26 +14,26 @@ variable "environment" {
   }
 }
 
-variable "network_project_id" {
+variable "shared_vpc_host_project_id" {
   type        = string
-  description = "(Optional) The GCP project ID of the Shared VPC host project, when the VPC you bring lives in a different project than `project_id`. Leave empty for the standard same-project setup. When set, `region` and `private_subnet_id` are required."
+  description = "(Optional) The GCP project ID of the Shared VPC host project, when the VPC you bring lives in a different project than `project_id`. Leave empty for the standard same-project setup. When set, `shared_vpc_host_subnet_region` and `shared_vpc_host_private_subnet_id` are required."
   default     = ""
 }
 
-variable "region" {
+variable "shared_vpc_host_subnet_region" {
   type        = string
-  description = "(Optional) The region of the Shared VPC host subnet. Required only when `network_project_id` is set."
+  description = "(Optional) The region of the Shared VPC host subnet. Required only when `shared_vpc_host_project_id` is set."
   default     = ""
 }
 
-variable "private_subnet_id" {
+variable "shared_vpc_host_private_subnet_id" {
   type        = string
-  description = "(Optional) The name of the existing Shared VPC host subnet used for GKE nodes. Required only when `network_project_id` is set."
+  description = "(Optional) The name of the existing Shared VPC host subnet used for GKE nodes. Required only when `shared_vpc_host_project_id` is set."
   default     = ""
 }
 
-variable "enable_private_link" {
+variable "enable_shared_vpc_private_link" {
   type        = bool
-  description = "(Optional) Set to true if you will use ClickHouse Private Service Connect (PrivateLink) with this Shared VPC. Grants the additional host-project permissions needed to create and manage the PSC NAT subnet (subnets in a Shared VPC belong to the host project). Only takes effect when `network_project_id` is set; leave false to keep the host-project permission surface minimal."
+  description = "(Optional) Set to true if you will use ClickHouse Private Service Connect (PrivateLink) with this Shared VPC. Grants the additional host-project permissions needed to create and manage the PSC NAT subnet (subnets in a Shared VPC belong to the host project). Only takes effect when `shared_vpc_host_project_id` is set; leave false to keep the host-project permission surface minimal."
   default     = false
 }
