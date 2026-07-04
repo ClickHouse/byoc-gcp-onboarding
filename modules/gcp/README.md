@@ -10,7 +10,7 @@ provider "google" {
 }
 
 module "clickhouse_onboarding" {
-  source     = "github.com/ClickHouse/terraform-byoc-onboarding.git//modules/gcp?ref=v1.0.0"
+  source     = "github.com/ClickHouse/terraform-byoc-onboarding.git//modules/gcp?ref=v1.2.0"
   project_id = "replace-with-your-clickhouse-byoc-project-id"
 }
 ```
@@ -21,7 +21,7 @@ If the VPC you bring lives in a **different** GCP project (the Shared VPC *host*
 
 ```hcl
 module "clickhouse_onboarding" {
-  source                            = "github.com/ClickHouse/terraform-byoc-onboarding.git//modules/gcp?ref=v1.0.0"
+  source                            = "github.com/ClickHouse/terraform-byoc-onboarding.git//modules/gcp?ref=v1.2.0"
   project_id                        = "replace-with-your-clickhouse-byoc-service-project-id"
   shared_vpc_host_project_id        = "replace-with-your-shared-vpc-host-project-id"
   shared_vpc_host_subnet_region     = "us-central1"
