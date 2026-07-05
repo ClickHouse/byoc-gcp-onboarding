@@ -2,6 +2,7 @@ name: Guard generated modules
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
     paths:
       - "modules/aws/**"
 
@@ -15,7 +16,7 @@ jobs:
           !contains(fromJSON('["workflow-authentication-2[bot]", "workflow-authentication[bot]"]'), github.event.pull_request.user.login) &&
           !contains(github.event.pull_request.labels.*.name, 'generated-override')
         run: |
-          echo "::error::modules/aws is generated from ClickHouse/data-plane-infrastructure (aws/iac/environments/prod/byoc-prod/global/onboarding/tf-template-byoc-cdk). Edit the generator there and let CI re-sync. Apply the 'generated-override' label to bypass in an emergency."
+          echo "::error::modules/aws is generated and published automatically by ClickHouse; manual edits will be overwritten by the next sync. If you believe a change is needed, open an issue. Maintainers: apply the 'generated-override' label to bypass in an emergency."
           exit 1
 
       - name: Checkout
