@@ -4,6 +4,7 @@ This repository contains Terraform module to bootstrap a BYOC environment for Cl
 
 See terraform modules for supported cloud:
 
+- [AWS](./modules/aws/)
 - [GCP](./modules/gcp/)
 - [Azure](./modules/azure/)
 
