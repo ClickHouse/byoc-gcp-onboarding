@@ -32,5 +32,11 @@ jobs:
           fi
           IFS=. read -r major minor patch <<< "${latest#v}"
           next="v${major}.${minor}.$((patch + 1))"
-          changed=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" -- modules/ | cut -d/ -f1-2 | sort -u | paste -sd ', ' -)
-          gh release create "$next" --target "${{ github.sha }}" --title "$next" --notes $'Automated release of synced generated modules.\n\nChanged: '"${changed}"$'\n\nThese modules are generated and published automatically by ClickHouse; see each module\'s README for usage. Always use the latest release.'
+          before="${{ github.event.before }}"
+          if [ "$before" = "0000000000000000000000000000000000000000" ]; then
+            changed="(full sync)"
+          else
+            changed=$(git diff --name-only "$before" "${{ github.sha }}" -- modules/ | cut -d/ -f1-2 | sort -u | paste -sd ', ' -)
+          fi
+          notes=$'Automated release of synced generated modules.\n\nChanged: '"${changed}"$'\n\nThese modules are generated and published automatically by ClickHouse; see each module\'s README for usage. Always use the latest release.'
+          gh release create "$next" --target "${{ github.sha }}" --title "$next" --notes "$notes"
