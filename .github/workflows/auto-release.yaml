@@ -7,12 +7,18 @@ on:
       - "modules/aws/**"
       - "modules/aws-per-infra-iam/**"
 
+concurrency:
+  group: auto-release
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
 jobs:
   tag:
     name: Tag patch release for bot sync
+    # Relies on squash- or rebase-merging the sync PR (head commit message = PR title).
+    # A merge-commit merge would produce "Merge pull request #N..." and silently skip the release.
     if: "startsWith(github.event.head_commit.message, 'chore(aws): sync')"
     runs-on: ubuntu-latest
     steps:
@@ -36,7 +42,8 @@ jobs:
           if [ "$before" = "0000000000000000000000000000000000000000" ]; then
             changed="(full sync)"
           else
-            changed=$(git diff --name-only "$before" "${{ github.sha }}" -- modules/ | cut -d/ -f1-2 | sort -u | paste -sd ', ' -)
+            changed=$(git diff --name-only "$before" "${{ github.sha }}" -- modules/ | cut -d/ -f1-2 | sort -u | paste -sd ',' -)
+            changed="${changed//,/, }"
           fi
           notes=$'Automated release of synced generated modules.\n\nChanged: '"${changed}"$'\n\nThese modules are generated and published automatically by ClickHouse; see each module\'s README for usage. Always use the latest release.'
           gh release create "$next" --target "${{ github.sha }}" --title "$next" --notes "$notes"

@@ -41,7 +41,7 @@ provider "azurerm" {
 }
 
 module "clickhouse_onboarding" {
-  source = "github.com/ClickHouse/terraform-byoc-onboarding.git//modules/azure?ref=v1.1.1"
+  source = "github.com/ClickHouse/terraform-byoc-onboarding.git//modules/azure?ref=<version>"
 }
 
 output "tenant_id" {
@@ -56,6 +56,10 @@ output "service_principal_client_id" {
   value = module.clickhouse_onboarding.service_principal_client_id
 }
 ```
+
+Replace `<version>` with the latest tag from the module's
+[releases page](https://github.com/ClickHouse/terraform-byoc-onboarding/releases)
+— always use the latest release.
 
 ## Inputs
 

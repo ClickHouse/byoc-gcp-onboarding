@@ -10,10 +10,14 @@ provider "google" {
 }
 
 module "clickhouse_onboarding" {
-  source     = "github.com/ClickHouse/terraform-byoc-onboarding.git//modules/gcp?ref=v1.2.0"
+  source     = "github.com/ClickHouse/terraform-byoc-onboarding.git//modules/gcp?ref=<version>"
   project_id = "replace-with-your-clickhouse-byoc-project-id"
 }
 ```
+
+Replace `<version>` with the latest tag from the module's
+[releases page](https://github.com/ClickHouse/terraform-byoc-onboarding/releases)
+— always use the latest release.
 
 ### Shared VPC (bring a VPC from a different project)
 
@@ -21,7 +25,7 @@ If the VPC you bring lives in a **different** GCP project (the Shared VPC *host*
 
 ```hcl
 module "clickhouse_onboarding" {
-  source                            = "github.com/ClickHouse/terraform-byoc-onboarding.git//modules/gcp?ref=v1.2.0"
+  source                            = "github.com/ClickHouse/terraform-byoc-onboarding.git//modules/gcp?ref=<version>"
   project_id                        = "replace-with-your-clickhouse-byoc-service-project-id"
   shared_vpc_host_project_id        = "replace-with-your-shared-vpc-host-project-id"
   shared_vpc_host_subnet_region     = "us-central1"
@@ -29,6 +33,10 @@ module "clickhouse_onboarding" {
   enable_shared_vpc_private_link    = true # only if you will use ClickHouse Private Service Connect (PrivateLink)
 }
 ```
+
+Replace `<version>` with the latest tag from the module's
+[releases page](https://github.com/ClickHouse/terraform-byoc-onboarding/releases)
+— always use the latest release.
 
 By default the host project grants are read-only (observe the brought network/subnet); GKE consumes the host subnet via a `compute.networkUser` binding. Set `enable_shared_vpc_private_link = true` to additionally grant the host-project permissions needed to manage the PrivateLink PSC NAT subnet (subnets in a Shared VPC belong to the host project). Leave it `false` to keep the host-project permission surface minimal.
 
