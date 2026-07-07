@@ -19,7 +19,7 @@ permission set as the CloudFormation onboarding template.
 
 ```hcl
 module "clickhouse_onboarding" {
-  source = "github.com/ClickHouse/terraform-byoc-onboarding.git//modules/aws?ref=v1.2.0"
+  source = "github.com/ClickHouse/terraform-byoc-onboarding.git//modules/aws?ref=<version>"
 
   # Required — provided by ClickHouse during BYOC onboarding
   external_id = "<external-id-provided-by-clickhouse>"
@@ -29,6 +29,10 @@ output "clickhouse_management_role_arn" {
   value = module.clickhouse_onboarding.clickhouse_management_role_arn
 }
 ```
+
+Replace `<version>` with the latest tag from the module's
+[releases page](https://github.com/ClickHouse/terraform-byoc-onboarding/releases)
+— always use the latest release.
 
 The module is also published as a tarball at
 `https://s3.us-east-2.amazonaws.com/clickhouse-public-resources.clickhouse.cloud/tf/byoc.tar.gz`,
