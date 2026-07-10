@@ -14,6 +14,12 @@ variable "environment" {
   }
 }
 
+variable "include_vpc_write_permissions" {
+  type        = bool
+  description = "(Optional) Whether to grant permissions to manage your VPC network topology (create/delete/modify of networks, routes, Cloud Routers, and subnet attributes). Set to `false` for bring-your-own-VPC onboarding, where you pre-create and manage the VPC, routes, and Cloud NAT yourself. Regardless of this setting, ClickHouse always retains read and use access to the VPC and manages the resources it owns inside it (the PrivateLink/PSC NAT subnet and service attachment, and ingress/static IP addresses in the service project)."
+  default     = true
+}
+
 variable "shared_vpc_host_project_id" {
   type        = string
   description = "(Optional) The GCP project ID of the Shared VPC host project, when the VPC you bring lives in a different project than `project_id`. Leave empty for the standard same-project setup. When set, `shared_vpc_host_subnet_region` and `shared_vpc_host_private_subnet_id` are required."

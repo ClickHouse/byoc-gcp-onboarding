@@ -20,18 +20,27 @@ resource "google_project_iam_custom_role" "clickhouse_common_role" {
   ]
 }
 
+# Always granted. Covers what ClickHouse needs even in a bring-your-own-VPC
+# setup: read/observe and use the VPC and related resources, plus create and
+# manage the ClickHouse-owned resources it provisions inside the VPC (in the
+# service project) regardless of who owns the network — the PrivateLink (PSC)
+# NAT subnet and service attachment, and the ingress/static IP addresses. The
+# customer's own network topology (networks, routes, Cloud Routers, subnet
+# attributes) lives in clickhouseVPCWriteRole, gated by
+# var.include_vpc_write_permissions.
+#
+# subnetworks/addresses create+delete stay here (not in the write role) because
+# ClickHouse creates a PSC NAT subnet and ingress IPs in the service project
+# even when the customer brings their own VPC; GCP IAM cannot scope these verbs
+# to only the ClickHouse-owned instances, and gating them breaks PSC and ingress
+# load balancers under bring-your-own-VPC.
 resource "google_project_iam_custom_role" "clickhouse_vpc_role" {
   role_id     = "clickhouseVPCRole"
   title       = "ClickHouse VPC Role"
-  description = "Role to allow ClickHouse Cloud to manage VPC resources in your project"
+  description = "Role to allow ClickHouse Cloud to read and use VPC resources in your project, and to manage the ClickHouse-owned subnets, addresses, and PrivateLink (PSC) it provisions within the VPC"
   permissions = [
     # Network
     "compute.networks.access",
-    "compute.networks.addPeering",
-    "compute.networks.create",
-    "compute.networks.createTagBinding",
-    "compute.networks.delete",
-    "compute.networks.deleteTagBinding",
     "compute.networks.get",
     "compute.networks.getEffectiveFirewalls",
     "compute.networks.getRegionEffectiveFirewalls",
@@ -39,13 +48,6 @@ resource "google_project_iam_custom_role" "clickhouse_vpc_role" {
     "compute.networks.listEffectiveTags",
     "compute.networks.listPeeringRoutes",
     "compute.networks.listTagBindings",
-    "compute.networks.mirror",
-    "compute.networks.removePeering",
-    "compute.networks.setFirewallPolicy",
-    "compute.networks.switchToCustomMode",
-    "compute.networks.update",
-    "compute.networks.updatePeering",
-    "compute.networks.updatePolicy",
     "compute.networks.use",
     "compute.networks.useExternalIp",
 
@@ -58,41 +60,27 @@ resource "google_project_iam_custom_role" "clickhouse_vpc_role" {
     "compute.forwardingRules.use",
     "compute.regionOperations.get",
 
-    # Subnetwork
+    # Subnetwork — read/use, plus create/delete/update for the ClickHouse-owned
+    # PSC NAT subnet created in the service project (also under bring-your-own-VPC)
     "compute.subnetworks.create",
-    "compute.subnetworks.createTagBinding",
     "compute.subnetworks.delete",
-    "compute.subnetworks.deleteTagBinding",
-    "compute.subnetworks.expandIpCidrRange",
     "compute.subnetworks.get",
     "compute.subnetworks.getIamPolicy",
     "compute.subnetworks.list",
     "compute.subnetworks.listEffectiveTags",
     "compute.subnetworks.listTagBindings",
-    "compute.subnetworks.mirror",
-    "compute.subnetworks.setIamPolicy",
-    "compute.subnetworks.setPrivateIpGoogleAccess",
     "compute.subnetworks.update",
     "compute.subnetworks.use",
     "compute.subnetworks.useExternalIp",
     "compute.subnetworks.usePeerMigration",
 
     # Route
-    "compute.routes.create",
-    "compute.routes.createTagBinding",
-    "compute.routes.delete",
-    "compute.routes.deleteTagBinding",
     "compute.routes.get",
     "compute.routes.list",
     "compute.routes.listEffectiveTags",
     "compute.routes.listTagBindings",
 
     # Router (Cloud Router)
-    "compute.routers.create",
-    "compute.routers.createTagBinding",
-    "compute.routers.delete",
-    "compute.routers.deleteRoutePolicy",
-    "compute.routers.deleteTagBinding",
     "compute.routers.get",
     "compute.routers.getRoutePolicy",
     "compute.routers.list",
@@ -100,17 +88,15 @@ resource "google_project_iam_custom_role" "clickhouse_vpc_role" {
     "compute.routers.listEffectiveTags",
     "compute.routers.listRoutePolicies",
     "compute.routers.listTagBindings",
-    "compute.routers.update",
-    "compute.routers.updateRoutePolicy",
     "compute.routers.use",
 
-    # Address (Static IPs)
+    # Address (Static IPs) — read/use, plus create/delete for the
+    # ClickHouse-owned ingress/static IPs created in the service project (also
+    # under bring-your-own-VPC)
     "compute.addresses.create",
     "compute.addresses.createInternal",
-    "compute.addresses.createTagBinding",
     "compute.addresses.delete",
     "compute.addresses.deleteInternal",
-    "compute.addresses.deleteTagBinding",
     "compute.addresses.get",
     "compute.addresses.list",
     "compute.addresses.listEffectiveTags",
@@ -118,6 +104,66 @@ resource "google_project_iam_custom_role" "clickhouse_vpc_role" {
     "compute.addresses.setLabels",
     "compute.addresses.use",
     "compute.addresses.useInternal",
+  ]
+}
+
+# Create/delete/modify permissions for the customer's VPC network topology:
+# the networks themselves, routes, Cloud Routers (Cloud NAT), and subnet
+# attributes (IAM policy, CIDR expansion, private Google access, tag bindings).
+# Gated by var.include_vpc_write_permissions: set it to false for
+# bring-your-own-VPC onboarding, where the customer pre-creates and manages
+# these resources. The role is only created and bound when writes are enabled.
+#
+# Note: this deliberately does NOT gate subnetworks/addresses create+delete —
+# ClickHouse must still create its own PSC NAT subnet and ingress IPs in the
+# service project even under bring-your-own-VPC. Those live in clickhouseVPCRole.
+resource "google_project_iam_custom_role" "clickhouse_vpc_write_role" {
+  count = var.include_vpc_write_permissions ? 1 : 0
+
+  role_id     = "clickhouseVPCWriteRole"
+  title       = "ClickHouse VPC Write Role"
+  description = "Role to allow ClickHouse Cloud to create, delete, and modify the VPC network topology (networks, routes, Cloud Routers, and subnet attributes) in your project"
+  permissions = [
+    # Network
+    "compute.networks.addPeering",
+    "compute.networks.create",
+    "compute.networks.createTagBinding",
+    "compute.networks.delete",
+    "compute.networks.deleteTagBinding",
+    "compute.networks.mirror",
+    "compute.networks.removePeering",
+    "compute.networks.setFirewallPolicy",
+    "compute.networks.switchToCustomMode",
+    "compute.networks.update",
+    "compute.networks.updatePeering",
+    "compute.networks.updatePolicy",
+
+    # Subnetwork (attribute management; create/delete stay in clickhouseVPCRole)
+    "compute.subnetworks.createTagBinding",
+    "compute.subnetworks.deleteTagBinding",
+    "compute.subnetworks.expandIpCidrRange",
+    "compute.subnetworks.mirror",
+    "compute.subnetworks.setIamPolicy",
+    "compute.subnetworks.setPrivateIpGoogleAccess",
+
+    # Route
+    "compute.routes.create",
+    "compute.routes.createTagBinding",
+    "compute.routes.delete",
+    "compute.routes.deleteTagBinding",
+
+    # Router (Cloud Router)
+    "compute.routers.create",
+    "compute.routers.createTagBinding",
+    "compute.routers.delete",
+    "compute.routers.deleteRoutePolicy",
+    "compute.routers.deleteTagBinding",
+    "compute.routers.update",
+    "compute.routers.updateRoutePolicy",
+
+    # Address (tag bindings; create/delete stay in clickhouseVPCRole)
+    "compute.addresses.createTagBinding",
+    "compute.addresses.deleteTagBinding",
   ]
 }
 

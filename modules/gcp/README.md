@@ -19,6 +19,24 @@ Replace `<version>` with the latest tag from the module's
 [releases page](https://github.com/ClickHouse/terraform-byoc-onboarding/releases)
 — always use the latest release.
 
+### Bring your own VPC (same project)
+
+If you pre-create and manage the VPC network, routes, and Cloud NAT yourself within the BYOC project, set `include_vpc_write_permissions = false`. ClickHouse then does **not** get permissions to create, delete, or modify the network topology (networks, routes, Cloud Routers, subnet attributes), but retains read and use access to it. ClickHouse still creates and manages the resources it owns inside your VPC — the PrivateLink (PSC) NAT subnet and service attachment, and ingress/static IP addresses — so PrivateLink and load balancers keep working.
+
+```hcl
+module "clickhouse_onboarding" {
+  source                        = "github.com/ClickHouse/terraform-byoc-onboarding.git//modules/gcp?ref=<version>"
+  project_id                    = "replace-with-your-clickhouse-byoc-project-id"
+  include_vpc_write_permissions = false
+}
+```
+
+Replace `<version>` with the latest tag from the module's
+[releases page](https://github.com/ClickHouse/terraform-byoc-onboarding/releases)
+— always use the latest release.
+
+If the VPC you bring instead lives in a **different** project, use the Shared VPC setup below.
+
 ### Shared VPC (bring a VPC from a different project)
 
 If the VPC you bring lives in a **different** GCP project (the Shared VPC *host* project) than the BYOC *service* project where ClickHouse runs GKE, set `shared_vpc_host_project_id` (plus the host subnet's `shared_vpc_host_subnet_region` and `shared_vpc_host_private_subnet_id`). The module then grants the network and GKE Shared VPC permissions in the host project, in addition to the standard service-project setup.
@@ -51,6 +69,7 @@ By default the host project grants are read-only (observe the brought network/su
 |------|-------------|------|---------|:--------:|
 | project_id | (Required) The GCP project ID where resources will be provisioned | string | n/a | yes |
 | environment | (Optional) Environment. Default is `production`. The other values are reserved for internal use | string | `production` | no |
+| include_vpc_write_permissions | (Optional) Whether to grant permissions to manage your VPC network topology (create/delete/modify of networks, routes, Cloud Routers, and subnet attributes). Set to `false` for bring-your-own-VPC onboarding. ClickHouse always retains read and use access to the VPC and manages the resources it owns inside it (PrivateLink/PSC NAT subnet and service attachment, ingress/static IP addresses) | bool | `true` | no |
 | shared_vpc_host_project_id | (Optional) The GCP project ID of the Shared VPC host project, when the VPC you bring lives in a different project than `project_id`. Leave empty for the standard same-project setup. When set, `shared_vpc_host_subnet_region` and `shared_vpc_host_private_subnet_id` are required | string | `""` | no |
 | shared_vpc_host_subnet_region | (Optional) The region of the Shared VPC host subnet. Required only when `shared_vpc_host_project_id` is set | string | `""` | no |
 | shared_vpc_host_private_subnet_id | (Optional) The name of the existing Shared VPC host subnet used for GKE nodes. Required only when `shared_vpc_host_project_id` is set | string | `""` | no |
@@ -73,12 +92,14 @@ By default the host project grants are read-only (observe the brought network/su
 | google_service_account.clickhouse_management_sa | Service Account to manage ClickHouse resources in BYOC project |
 | google_project_service.cloud_resource_manager | Enables Cloud Resource Manager service API |
 | google_project_iam_custom_role.clickhouse_common_role | Role to allow ClickHouse Cloud common operations |
-| google_project_iam_custom_role.clickhouse_vpc_role | Role to allow ClickHouse Cloud to manage VPC resources in your project |
+| google_project_iam_custom_role.clickhouse_vpc_role | Role to allow ClickHouse Cloud to read and use VPC resources, and to create/manage the ClickHouse-owned subnets, addresses, and PrivateLink (PSC) it provisions within the VPC |
+| google_project_iam_custom_role.clickhouse_vpc_write_role | Role to allow ClickHouse Cloud to create/delete/modify the VPC network topology (networks, routes, Cloud Routers, subnet attributes); created only when `include_vpc_write_permissions` is true |
 | google_project_iam_custom_role.clickhouse_cluster_role | Role to allow ClickHouse Cloud to manage cluster resources in your project |
 | google_project_iam_custom_role.clickhouse_storage_role | Role to allow ClickHouse Cloud to manage Object Storage resources in your project |
 | google_project_iam_custom_role.clickhouse_iam_role | Role to allow ClickHouse Cloud to manage IAM resources in your project |
 | google_project_iam_member.clickhouse_sa_roles["common_role"] | Grants `clickhouseCommonRole` to ClickHouse Management Service Account |
 | google_project_iam_member.clickhouse_sa_roles["vpc_role"] | Grants `clickhouseVPCRole` to ClickHouse Management Service Account |
+| google_project_iam_member.clickhouse_sa_roles["vpc_write_role"] | Grants `clickhouseVPCWriteRole` to ClickHouse Management Service Account; present only when `include_vpc_write_permissions` is true |
 | google_project_iam_member.clickhouse_sa_roles["cluster_role"] | Grants `clickhouseClusterRole` to ClickHouse Management Service Account |
 | google_project_iam_member.clickhouse_sa_roles["storage_role"] | Grants `clickhouseStorageRole` to ClickHouse Management Service Account |
 | google_project_iam_member.clickhouse_sa_roles["iam_role"] | Grants `clickhouseIamRole` to ClickHouse Management Service Account |
