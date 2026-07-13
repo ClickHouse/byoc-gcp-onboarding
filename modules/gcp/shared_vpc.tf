@@ -50,6 +50,23 @@ locals {
     local.shared_vpc_host_base_permissions,
     local.enable_psc_host ? local.shared_vpc_host_psc_permissions : [],
   )
+
+  # Under Shared VPC, GKE creates its firewall rules in the host project (the
+  # cluster's network lives there), but the service project's GKE service agent
+  # has no authority to write them: hostServiceAgentUser + subnet networkUser do
+  # not include compute.firewalls. Without these the L4 ILB health-check rule
+  # (130.211.0.0/22, 35.191.0.0/16) is never created -> istio-ingress-private
+  # backends stay unhealthy -> PrivateLink PSC is dead; and the master->node
+  # rule (tcp 10250/443) breaks admission webhooks and metrics-server. This is
+  # GCP's documented granular alternative to roles/compute.securityAdmin.
+  gke_shared_vpc_firewall_permissions = [
+    "compute.firewalls.create",
+    "compute.firewalls.delete",
+    "compute.firewalls.get",
+    "compute.firewalls.list",
+    "compute.firewalls.update",
+    "compute.networks.updatePolicy",
+  ]
 }
 
 data "google_project" "service" {
@@ -126,4 +143,40 @@ resource "google_compute_subnetwork_iam_member" "network_user" {
   subnetwork = var.shared_vpc_host_private_subnet_id
   role       = "roles/compute.networkUser"
   member     = each.value
+}
+
+# Enable the Container API on the host project too. This provisions the host
+# project's own GKE service agent and auto-grants it roles/container.serviceAgent
+# there, which is what creates the cluster-lifecycle firewall rules in the host
+# network via the hostServiceAgentUser delegation above. disable_on_destroy is
+# false: other clusters/service-projects may share this host project.
+resource "google_project_service" "container_host" {
+  count = local.shared_vpc ? 1 : 0
+
+  project            = var.shared_vpc_host_project_id
+  service            = "container.googleapis.com"
+  disable_on_destroy = false
+}
+
+# Scoped firewall authority for the service project's GKE service agent in the
+# host project. GKE's in-cluster controllers (e.g. the L4 ILB controller for
+# istio-ingress-private) run as this agent and create/update firewall rules in
+# the host network; hostServiceAgentUser does not cover compute.firewalls.
+resource "google_project_iam_custom_role" "clickhouse_gke_shared_vpc_firewall_role" {
+  count = local.shared_vpc ? 1 : 0
+
+  project     = var.shared_vpc_host_project_id
+  role_id     = "clickhouseGKESharedVPCFirewallRole"
+  title       = "ClickHouse GKE Shared VPC Firewall Role"
+  description = "Allows the service project's GKE service agent to manage its cluster/load-balancer firewall rules in the Shared VPC host project"
+  permissions = local.gke_shared_vpc_firewall_permissions
+}
+
+resource "google_project_iam_member" "gke_shared_vpc_firewall" {
+  count = local.shared_vpc ? 1 : 0
+
+  depends_on = [google_project_service.container]
+  project    = var.shared_vpc_host_project_id
+  role       = google_project_iam_custom_role.clickhouse_gke_shared_vpc_firewall_role[0].id
+  member     = local.gke_service_agent_member
 }
