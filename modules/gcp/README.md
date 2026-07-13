@@ -40,6 +40,8 @@ Replace `<version>` with the latest tag from the module's
 
 By default the host project grants are read-only (observe the brought network/subnet); GKE consumes the host subnet via a `compute.networkUser` binding. Set `enable_shared_vpc_private_link = true` to additionally grant the host-project permissions needed to manage the PrivateLink PSC NAT subnet (subnets in a Shared VPC belong to the host project). Leave it `false` to keep the host-project permission surface minimal.
 
+Because a GKE cluster on a Shared VPC has its network in the host project, GKE also creates its firewall rules there — the master→node rule (kubelet/webhook ports) and the load-balancer health-check rules. The module therefore enables the Container API on the host project (so the host project's GKE service agent exists) and grants the service project's GKE service agent a scoped firewall role (`compute.firewalls.*` + `compute.networks.updatePolicy`) in the host project. Without this, admission webhooks and metrics-server degrade and internal load balancers (including the PrivateLink PSC ingress) never become healthy.
+
 **Prerequisites for Shared VPC:**
 
 - The host project must already be enabled as a [Shared VPC host](https://cloud.google.com/vpc/docs/provisioning-shared-vpc) and the service project (`project_id`) attached to it. This is an org-level operation (`compute.xpnAdmin`) and is **not** performed by this module.
@@ -65,6 +67,7 @@ By default the host project grants are read-only (observe the brought network/su
 | shared_vpc_enabled | Whether Shared VPC host-project resources were provisioned (true when `shared_vpc_host_project_id` is set) | bool |
 | shared_vpc_host_role | The ID of the ClickHouse Shared VPC host role granted in the host project, or null when Shared VPC is not used | string |
 | gke_service_agent_member | The service project's GKE service agent granted access to the Shared VPC host project, or null when Shared VPC is not used | string |
+| gke_shared_vpc_firewall_role | The ID of the firewall role granted to the GKE service agent in the host project, or null when Shared VPC is not used | string |
 
 ## Resources
 
@@ -88,6 +91,9 @@ By default the host project grants are read-only (observe the brought network/su
 | google_project_service.container | [Shared VPC] Enables the Container API on the service project so its GKE service agent exists |
 | google_project_iam_member.gke_host_service_agent_user | [Shared VPC] Grants `roles/container.hostServiceAgentUser` to the service project's GKE service agent on the host project |
 | google_compute_subnetwork_iam_member.network_user | [Shared VPC] Grants `roles/compute.networkUser` on the host subnet to the GKE service agent, Google APIs SA, and ClickHouse Management Service Account |
+| google_project_service.container_host | [Shared VPC] Enables the Container API on the host project so its GKE service agent exists (creates cluster-lifecycle firewall rules in the host network) |
+| google_project_iam_custom_role.clickhouse_gke_shared_vpc_firewall_role | [Shared VPC] Role allowing the GKE service agent to manage cluster/load-balancer firewall rules in the host project |
+| google_project_iam_member.gke_shared_vpc_firewall | [Shared VPC] Grants `clickhouseGKESharedVPCFirewallRole` to the service project's GKE service agent in the host project |
 
 ## Requirements
 
