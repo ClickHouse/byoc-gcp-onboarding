@@ -91,7 +91,7 @@ resource "aws_iam_role" "role_k8s_control_plane" {
   name               = "${var.spoken_name}-${var.region}-k8s-control-plane"
   tags = {
     clickhouse-byoc = "true"
-    version         = "2.0.293-e6e44a4"
+    version         = "2.0.296-a98a543"
   }
 }
 resource "aws_iam_role_policy_attachment" "managed_policy_k8s_control_plane_amazon_eks_cluster_policy" {
@@ -147,7 +147,7 @@ resource "aws_iam_role" "role_k8s_worker" {
   name               = "${var.spoken_name}-${var.region}-k8s-worker"
   tags = {
     clickhouse-byoc = "true"
-    version         = "2.0.293-e6e44a4"
+    version         = "2.0.296-a98a543"
   }
 }
 resource "aws_iam_role_policy_attachment" "managed_policy_k8s_worker_amazon_eks_worker_node_policy" {
@@ -183,7 +183,7 @@ resource "aws_iam_role" "role_load_balancer_controller" {
   name               = "${var.spoken_name}-${var.region}-load-balancer-controller"
   tags = {
     clickhouse-byoc = "true"
-    version         = "2.0.293-e6e44a4"
+    version         = "2.0.296-a98a543"
   }
 }
 data "aws_iam_policy_document" "inline_policy_load_balancer_controller_lb_controller_iam_policy" {
@@ -483,7 +483,7 @@ resource "aws_iam_role" "role_ebs_csi_driver" {
   name               = "${var.spoken_name}-${var.region}-ebs-csi-driver"
   tags = {
     clickhouse-byoc = "true"
-    version         = "2.0.293-e6e44a4"
+    version         = "2.0.296-a98a543"
   }
 }
 data "aws_iam_policy_document" "inline_policy_ebs_csi_driver_ebscsi_driver_policy" {
@@ -748,7 +748,7 @@ resource "aws_iam_role" "role_cluster_autoscaler" {
   name               = "${var.spoken_name}-${var.region}-cluster-autoscaler"
   tags = {
     clickhouse-byoc = "true"
-    version         = "2.0.293-e6e44a4"
+    version         = "2.0.296-a98a543"
   }
 }
 data "aws_iam_policy_document" "inline_policy_cluster_autoscaler_eks_autoscaler_policy" {
@@ -780,7 +780,7 @@ resource "aws_iam_role" "role_karpenter_controller" {
   name               = "${var.spoken_name}-${var.region}-karpenter-controller"
   tags = {
     clickhouse-byoc = "true"
-    version         = "2.0.293-e6e44a4"
+    version         = "2.0.296-a98a543"
   }
 }
 data "aws_iam_policy_document" "inline_policy_karpenter_controller_karpenter_controller_policy" {
@@ -1138,7 +1138,7 @@ resource "aws_iam_role" "role_karpenter_node" {
   name               = "${var.spoken_name}-${var.region}-karpenter-node"
   tags = {
     clickhouse-byoc = "true"
-    version         = "2.0.293-e6e44a4"
+    version         = "2.0.296-a98a543"
   }
 }
 resource "aws_iam_role_policy_attachment" "managed_policy_karpenter_node_amazon_eks_worker_node_policy" {
@@ -1162,7 +1162,7 @@ resource "aws_iam_role" "role_state_exporter" {
   name               = "${var.spoken_name}-${var.region}-state-exporter"
   tags = {
     clickhouse-byoc = "true"
-    version         = "2.0.293-e6e44a4"
+    version         = "2.0.296-a98a543"
   }
 }
 data "aws_iam_policy_document" "inline_policy_state_exporter_state_exporter_policy" {
@@ -1187,7 +1187,7 @@ resource "aws_iam_role" "role_thanos" {
   name               = "${var.spoken_name}-${var.region}-thanos"
   tags = {
     clickhouse-byoc = "true"
-    version         = "2.0.293-e6e44a4"
+    version         = "2.0.296-a98a543"
   }
 }
 data "aws_iam_policy_document" "inline_policy_thanos_thanos_policy" {
@@ -1216,7 +1216,7 @@ resource "aws_iam_role" "role_clickhouse_scraper" {
   name               = "${var.spoken_name}-${var.region}-clickhouse-scraper"
   tags = {
     clickhouse-byoc = "true"
-    version         = "2.0.293-e6e44a4"
+    version         = "2.0.296-a98a543"
   }
 }
 data "aws_iam_policy_document" "inline_policy_clickhouse_scraper_scraper_billing_bucket_assume_role_policy" {
@@ -1241,7 +1241,7 @@ resource "aws_iam_role" "role_clickhouse_s3_access" {
   name               = "${var.spoken_name}-${var.region}-CH-S3-Role"
   tags = {
     clickhouse-byoc = "true"
-    version         = "2.0.293-e6e44a4"
+    version         = "2.0.296-a98a543"
   }
 }
 data "aws_iam_policy_document" "billing_bucket_assume_role_policy" {
@@ -1326,7 +1326,7 @@ resource "aws_iam_role" "role_data_plane_management" {
   name               = "${var.spoken_name}-${var.region}-data-plane-mgmt"
   tags = {
     clickhouse-byoc = "true"
-    version         = "2.0.293-e6e44a4"
+    version         = "2.0.296-a98a543"
   }
 }
 data "aws_iam_policy_document" "data_plane_management_policy" {
