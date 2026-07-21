@@ -46,6 +46,18 @@ resource "azurerm_role_definition" "clickhouse_byoc_provisioner" {
       "Microsoft.Network/networkSecurityGroups/securityRules/write",
       "Microsoft.Network/networkSecurityGroups/securityRules/delete",
 
+      # Private Link Services & load balancer frontends: ClickHouse fronts the
+      # private AKS API server's internal load balancer with a Private Link
+      # Service so the ClickHouse management plane can reach it without a
+      # public endpoint. The join action authorizes referencing the
+      # AKS-managed kube-apiserver frontend when creating the PLS.
+      "Microsoft.Network/privateLinkServices/read",
+      "Microsoft.Network/privateLinkServices/write",
+      "Microsoft.Network/privateLinkServices/delete",
+      "Microsoft.Network/loadBalancers/read",
+      "Microsoft.Network/loadBalancers/frontendIPConfigurations/read",
+      "Microsoft.Network/loadBalancers/frontendIPConfigurations/join/action",
+
       # DNS Zones
       "Microsoft.Network/dnszones/read",
       "Microsoft.Network/dnszones/write",
