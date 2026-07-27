@@ -631,6 +631,14 @@ resource "google_project_iam_custom_role" "clickhouse_storage_role" {
     "storage.buckets.setIamPolicy",
     "storage.buckets.setIpFilter",
     "storage.buckets.update",
+    # Object-level access is required to tear down ClickHouse-managed buckets:
+    # bucket deletion runs with force_destroy=true, which must first list and
+    # delete the objects inside (e.g. the monitoring bucket's Thanos TSDB
+    # blocks) before removing the bucket. Without these, bucket delete 403s and
+    # the infra is stuck terminating (BYOC-768).
+    "storage.objects.list",
+    "storage.objects.get",
+    "storage.objects.delete",
   ]
 }
 
