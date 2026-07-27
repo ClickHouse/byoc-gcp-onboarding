@@ -1,11 +1,10 @@
-name: Auto-release synced modules
+name: Auto-release module changes
 
 on:
   push:
     branches: [main]
     paths:
-      - "modules/aws/**"
-      - "modules/aws-per-infra-iam/**"
+      - "modules/**"
 
 concurrency:
   group: auto-release
@@ -13,13 +12,27 @@ concurrency:
 
 permissions:
   contents: write
+  pull-requests: read
 
 jobs:
-  tag:
-    name: Tag patch release for bot sync
-    # Relies on squash- or rebase-merging the sync PR (head commit message = PR title).
-    # A merge-commit merge would produce "Merge pull request #N..." and silently skip the release.
-    if: "startsWith(github.event.head_commit.message, 'chore(aws): sync')"
+  validate:
+    name: Validate terraform configuration
+    # Required checks are not strict, so a PR merged on a stale base can break
+    # main; re-check before publishing a release from it.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Terraform validate
+        uses: dflook/terraform-validate@v2
+
+      - name: Terraform fmt check
+        uses: dflook/terraform-fmt-check@v2
+
+  release:
+    name: Tag release
+    needs: validate
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -27,23 +40,19 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Create next patch release
+      - name: Plan release
+        id: plan
         env:
           GH_TOKEN: ${{ github.token }}
+        run: .github/scripts/plan-release.sh
+
+      - name: Create release
+        if: steps.plan.outputs.version != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.plan.outputs.version }}
         run: |
-          latest=$(git tag -l 'v*' --sort=-v:refname | head -1)
-          if [ -z "$latest" ]; then
-            echo "::error::no existing v* tag found; cannot compute next patch version"
-            exit 1
-          fi
-          IFS=. read -r major minor patch <<< "${latest#v}"
-          next="v${major}.${minor}.$((patch + 1))"
-          before="${{ github.event.before }}"
-          if [ "$before" = "0000000000000000000000000000000000000000" ]; then
-            changed="(full sync)"
-          else
-            changed=$(git diff --name-only "$before" "${{ github.sha }}" -- modules/ | cut -d/ -f1-2 | sort -u | paste -sd ',' -)
-            changed="${changed//,/, }"
-          fi
-          notes=$'Automated release of synced generated modules.\n\nChanged: '"${changed}"$'\n\nThese modules are generated and published automatically by ClickHouse; see each module\'s README for usage. Always use the latest release.'
-          gh release create "$next" --target "${{ github.sha }}" --title "$next" --notes "$notes"
+          gh release create "$VERSION" \
+            --target "${{ github.sha }}" \
+            --title "$VERSION" \
+            --notes-file release-notes.md
