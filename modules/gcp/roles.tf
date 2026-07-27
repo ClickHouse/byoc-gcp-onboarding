@@ -17,6 +17,9 @@ resource "google_project_iam_custom_role" "clickhouse_common_role" {
 
     # Project operations
     "resourcemanager.projects.get",
+
+    # Service usage for validation checks
+    "serviceusage.services.get",
   ]
 }
 
