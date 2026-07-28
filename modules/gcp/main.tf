@@ -17,6 +17,24 @@ resource "google_project_service" "compute_engine" {
   disable_on_destroy = false
 }
 
+# Enable Network Connectivity API
+resource "google_project_service" "compute_engine" {
+  service            = "networkconnectivity.googleapis.com"
+  disable_on_destroy = false
+}
+
+# Enable Identity and Access Management (IAM) API
+resource "google_project_service" "compute_engine" {
+  service            = "iam.googleapis.com"
+  disable_on_destroy = false
+}
+
+# Enable Kubernetes Engine API
+resource "google_project_service" "compute_engine" {
+  service            = "container.googleapis.com"
+  disable_on_destroy = false
+}
+
 # Grant IAM roles to ClickHouse Management SA
 resource "google_project_iam_member" "clickhouse_sa_roles" {
   for_each = local.clickhouse_custom_roles
