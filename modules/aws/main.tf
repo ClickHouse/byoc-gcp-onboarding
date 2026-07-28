@@ -88,7 +88,7 @@ resource "aws_iam_role" "clickhouse_management_role" {
   name               = var.role_name
   tags = {
     clickhouse-byoc = "true"
-    version         = "2.0.296-a98a543"
+    version         = "2.0.299-f10700f"
   }
 }
 data "aws_iam_policy_document" "base_policy" {
