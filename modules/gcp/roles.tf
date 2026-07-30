@@ -53,6 +53,7 @@ resource "google_project_iam_custom_role" "clickhouse_vpc_role" {
     "compute.networks.listTagBindings",
     "compute.networks.use",
     "compute.networks.useExternalIp",
+    "compute.networks.updatePolicy",
 
     # Private Service Connect
     "compute.serviceAttachments.get",
@@ -139,7 +140,6 @@ resource "google_project_iam_custom_role" "clickhouse_vpc_write_role" {
     "compute.networks.switchToCustomMode",
     "compute.networks.update",
     "compute.networks.updatePeering",
-    "compute.networks.updatePolicy",
 
     # Subnetwork (attribute management; create/delete stay in clickhouseVPCRole)
     "compute.subnetworks.createTagBinding",
