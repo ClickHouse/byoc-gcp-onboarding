@@ -18,19 +18,19 @@ resource "google_project_service" "compute_engine" {
 }
 
 # Enable Network Connectivity API
-resource "google_project_service" "compute_engine" {
+resource "google_project_service" "network_connectivity_api" {
   service            = "networkconnectivity.googleapis.com"
   disable_on_destroy = false
 }
 
 # Enable Identity and Access Management (IAM) API
-resource "google_project_service" "compute_engine" {
+resource "google_project_service" "iam_api" {
   service            = "iam.googleapis.com"
   disable_on_destroy = false
 }
 
 # Enable Kubernetes Engine API
-resource "google_project_service" "compute_engine" {
+resource "google_project_service" "container_api" {
   service            = "container.googleapis.com"
   disable_on_destroy = false
 }
