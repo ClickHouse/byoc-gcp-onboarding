@@ -11,6 +11,17 @@ resource "google_project_service" "cloud_resource_manager" {
   disable_on_destroy = false
 }
 
+# Enable the Service Usage API. Terraform itself does not need this enabled here
+# (it calls Service Usage under your own credentials and quota project), but the
+# ClickHouse onboarding validator does: it impersonates the management SA below
+# with this project as the API consumer, so reading which APIs are enabled fails
+# with SERVICE_DISABLED unless Service Usage is enabled in this project. Without
+# it every API-enablement preflight check reports a false failure.
+resource "google_project_service" "service_usage" {
+  service            = "serviceusage.googleapis.com"
+  disable_on_destroy = false
+}
+
 # Enable Compute Engine API
 resource "google_project_service" "compute_engine" {
   service            = "compute.googleapis.com"

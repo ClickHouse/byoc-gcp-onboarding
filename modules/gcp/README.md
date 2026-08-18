@@ -92,6 +92,7 @@ Because a GKE cluster on a Shared VPC has its network in the host project, GKE a
 |------|------|
 | google_service_account.clickhouse_management_sa | Service Account to manage ClickHouse resources in BYOC project |
 | google_project_service.cloud_resource_manager | Enables Cloud Resource Manager service API |
+| google_project_service.service_usage | Enables the Service Usage API so ClickHouse onboarding checks can read which APIs are enabled in your project |
 | google_project_iam_custom_role.clickhouse_common_role | Role to allow ClickHouse Cloud common operations |
 | google_project_iam_custom_role.clickhouse_vpc_role | Role to allow ClickHouse Cloud to read and use VPC resources, and to create/manage the ClickHouse-owned subnets, addresses, and PrivateLink (PSC) it provisions within the VPC |
 | google_project_iam_custom_role.clickhouse_vpc_write_role | Role to allow ClickHouse Cloud to create/delete/modify the VPC network topology (networks, routes, Cloud Routers, subnet attributes); created only when `include_vpc_write_permissions` is true |
