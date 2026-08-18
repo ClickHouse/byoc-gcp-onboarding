@@ -27,20 +27,21 @@ resource "google_project_iam_custom_role" "clickhouse_common_role" {
 # setup: read/observe and use the VPC and related resources, plus create and
 # manage the ClickHouse-owned resources it provisions inside the VPC (in the
 # service project) regardless of who owns the network — the PrivateLink (PSC)
-# NAT subnet and service attachment, and the ingress/static IP addresses. The
-# customer's own network topology (networks, routes, Cloud Routers, subnet
-# attributes) lives in clickhouseVPCWriteRole, gated by
-# var.include_vpc_write_permissions.
+# service attachment and the ingress/static IP addresses. The customer's own
+# network topology (networks, routes, Cloud Routers, subnets) lives in
+# clickhouseVPCWriteRole, gated by var.include_vpc_write_permissions.
 #
-# subnetworks/addresses create+delete stay here (not in the write role) because
-# ClickHouse creates a PSC NAT subnet and ingress IPs in the service project
-# even when the customer brings their own VPC; GCP IAM cannot scope these verbs
-# to only the ClickHouse-owned instances, and gating them breaks PSC and ingress
-# load balancers under bring-your-own-VPC.
+# addresses create+delete stay here (not in the write role) because ClickHouse
+# creates ingress IPs in the service project even when the customer brings
+# their own VPC; GCP IAM cannot scope those verbs to only the ClickHouse-owned
+# instances, and gating them breaks ingress load balancers under
+# bring-your-own-VPC. Subnets are not in that category: since BYOC-891 the
+# customer pre-creates the PSC NAT subnet and the composition observes every
+# subnet under bring-your-own-VPC, so ClickHouse creates none.
 resource "google_project_iam_custom_role" "clickhouse_vpc_role" {
   role_id     = "clickhouseVPCRole"
   title       = "ClickHouse VPC Role"
-  description = "Role to allow ClickHouse Cloud to read and use VPC resources in your project, and to manage the ClickHouse-owned subnets, addresses, and PrivateLink (PSC) it provisions within the VPC"
+  description = "Role to allow ClickHouse Cloud to read and use VPC resources in your project, and to manage the ClickHouse-owned addresses and PrivateLink (PSC) service attachment it provisions within the VPC"
   permissions = [
     # Network
     "compute.networks.access",
@@ -64,16 +65,13 @@ resource "google_project_iam_custom_role" "clickhouse_vpc_role" {
     "compute.forwardingRules.use",
     "compute.regionOperations.get",
 
-    # Subnetwork — read/use, plus create/delete/update for the ClickHouse-owned
-    # PSC NAT subnet created in the service project (also under bring-your-own-VPC)
-    "compute.subnetworks.create",
-    "compute.subnetworks.delete",
+    # Subnetwork — read/use only. Creating and deleting subnets is a
+    # ClickHouse-managed-VPC concern and lives in clickhouseVPCWriteRole.
     "compute.subnetworks.get",
     "compute.subnetworks.getIamPolicy",
     "compute.subnetworks.list",
     "compute.subnetworks.listEffectiveTags",
     "compute.subnetworks.listTagBindings",
-    "compute.subnetworks.update",
     "compute.subnetworks.use",
     "compute.subnetworks.useExternalIp",
     "compute.subnetworks.usePeerMigration",
@@ -112,21 +110,22 @@ resource "google_project_iam_custom_role" "clickhouse_vpc_role" {
 }
 
 # Create/delete/modify permissions for the customer's VPC network topology:
-# the networks themselves, routes, Cloud Routers (Cloud NAT), and subnet
-# attributes (IAM policy, CIDR expansion, private Google access, tag bindings).
-# Gated by var.include_vpc_write_permissions: set it to false for
-# bring-your-own-VPC onboarding, where the customer pre-creates and manages
-# these resources. The role is only created and bound when writes are enabled.
+# the networks themselves, routes, Cloud Routers (Cloud NAT), and subnets
+# (lifecycle plus attributes — IAM policy, CIDR expansion, private Google
+# access, tag bindings). Gated by var.include_vpc_write_permissions: set it to
+# false for bring-your-own-VPC onboarding, where the customer pre-creates and
+# manages these resources. The role is only created and bound when writes are
+# enabled.
 #
-# Note: this deliberately does NOT gate subnetworks/addresses create+delete —
-# ClickHouse must still create its own PSC NAT subnet and ingress IPs in the
-# service project even under bring-your-own-VPC. Those live in clickhouseVPCRole.
+# Note: addresses create+delete are deliberately NOT gated here — ClickHouse
+# must still create its own ingress IPs in the service project even under
+# bring-your-own-VPC. Those live in clickhouseVPCRole.
 resource "google_project_iam_custom_role" "clickhouse_vpc_write_role" {
   count = var.include_vpc_write_permissions ? 1 : 0
 
   role_id     = "clickhouseVPCWriteRole"
   title       = "ClickHouse VPC Write Role"
-  description = "Role to allow ClickHouse Cloud to create, delete, and modify the VPC network topology (networks, routes, Cloud Routers, and subnet attributes) in your project"
+  description = "Role to allow ClickHouse Cloud to create, delete, and modify the VPC network topology (networks, routes, Cloud Routers, and subnets) in your project"
   permissions = [
     # Network
     "compute.networks.addPeering",
@@ -141,13 +140,16 @@ resource "google_project_iam_custom_role" "clickhouse_vpc_write_role" {
     "compute.networks.update",
     "compute.networks.updatePeering",
 
-    # Subnetwork (attribute management; create/delete stay in clickhouseVPCRole)
+    # Subnetwork (lifecycle + attribute management)
+    "compute.subnetworks.create",
     "compute.subnetworks.createTagBinding",
+    "compute.subnetworks.delete",
     "compute.subnetworks.deleteTagBinding",
     "compute.subnetworks.expandIpCidrRange",
     "compute.subnetworks.mirror",
     "compute.subnetworks.setIamPolicy",
     "compute.subnetworks.setPrivateIpGoogleAccess",
+    "compute.subnetworks.update",
 
     # Route
     "compute.routes.create",
