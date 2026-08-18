@@ -17,10 +17,12 @@ locals {
   gke_service_agent_member = local.shared_vpc ? "serviceAccount:service-${local.service_project_number}@container-engine-robot.iam.gserviceaccount.com" : null
   cloudservices_sa_member  = local.shared_vpc ? "serviceAccount:${local.service_project_number}@cloudservices.gserviceaccount.com" : null
 
-  # Host-project permissions under Shared VPC. Everything ClickHouse touches in
-  # the host project is either observed or used, never created: Crossplane
-  # manages the brought network/subnet Observe-only, and the PSC NAT subnet is
-  # pre-created by the customer. subnetworks.use lets the service-project
+  # The management SA's permissions in the host project. Everything it touches
+  # there is either observed or used, never created: Crossplane manages the
+  # brought network/subnet Observe-only, and the PSC NAT subnet is pre-created
+  # by the customer. (The GKE service agent is a separate principal and does get
+  # firewall writes here — see gke_shared_vpc_firewall_permissions below.)
+  # subnetworks.use lets the service-project
   # ServiceAttachment reference that PSC subnet as its NAT subnet — subnets in a
   # Shared VPC belong to the host project. The ServiceAttachment itself lives in
   # the service project and is covered by the service-project clickhouseVPCRole,
@@ -57,9 +59,9 @@ data "google_project" "service" {
   project_id = var.project_id
 }
 
-# Permissions ClickHouse needs in the Shared VPC host project: observe the
-# brought network/subnet and use the customer-provided PrivateLink PSC NAT
-# subnet. Read + use only; nothing here writes to the host project.
+# Permissions the ClickHouse management SA needs in the Shared VPC host
+# project: observe the brought network/subnet and use the customer-provided
+# PrivateLink PSC NAT subnet. Read + use only; this SA never writes there.
 resource "google_project_iam_custom_role" "clickhouse_shared_vpc_host_role" {
   count = local.shared_vpc ? 1 : 0
 
