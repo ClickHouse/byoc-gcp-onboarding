@@ -9,11 +9,6 @@
 locals {
   shared_vpc = var.shared_vpc_host_project_id != ""
 
-  # PSC host-project permissions apply only when both Shared VPC is in use and
-  # the customer intends to use PrivateLink. When PrivateLink is off we keep the
-  # host-project permission surface to the read-only observe set below.
-  enable_psc_host = local.shared_vpc && var.enable_shared_vpc_private_link
-
   # GKE service agents of the service project (this project). These are
   # well-known, derived from the project number, and must be granted access to
   # the host network for a Shared VPC GKE cluster. Referenced only by the
@@ -22,34 +17,21 @@ locals {
   gke_service_agent_member = local.shared_vpc ? "serviceAccount:service-${local.service_project_number}@container-engine-robot.iam.gserviceaccount.com" : null
   cloudservices_sa_member  = local.shared_vpc ? "serviceAccount:${local.service_project_number}@cloudservices.gserviceaccount.com" : null
 
-  # Always needed in the host project under Shared VPC: observe the brought
-  # network/subnet (Crossplane manages them Observe-only, and the onboarding
-  # validator reads them here). Using the node subnet is granted separately via
-  # the compute.networkUser binding below.
-  shared_vpc_host_base_permissions = [
+  # Host-project permissions under Shared VPC. Everything ClickHouse touches in
+  # the host project is either observed or used, never created: Crossplane
+  # manages the brought network/subnet Observe-only, and the PSC NAT subnet is
+  # pre-created by the customer. subnetworks.use lets the service-project
+  # ServiceAttachment reference that PSC subnet as its NAT subnet — subnets in a
+  # Shared VPC belong to the host project. The ServiceAttachment itself lives in
+  # the service project and is covered by the service-project clickhouseVPCRole,
+  # so no serviceAttachments/forwardingRules permissions are needed here. Using
+  # the node subnet is granted separately via the compute.networkUser binding
+  # below.
+  shared_vpc_host_permissions = [
     "compute.networks.get",
     "compute.subnetworks.get",
-  ]
-
-  # PrivateLink only: manage the PSC NAT subnet, which — like every subnet in a
-  # Shared VPC — is created in the host project. subnetworks.use lets the
-  # service-project ServiceAttachment reference this host subnet as its NAT
-  # subnet; regionOperations.get polls the async subnet create/delete. The
-  # ServiceAttachment itself lives in the service project and is covered by the
-  # service-project clickhouseVPCRole, so no serviceAttachments/forwardingRules
-  # permissions are needed here.
-  shared_vpc_host_psc_permissions = [
-    "compute.subnetworks.create",
-    "compute.subnetworks.delete",
-    "compute.subnetworks.update",
     "compute.subnetworks.use",
-    "compute.regionOperations.get",
   ]
-
-  shared_vpc_host_permissions = concat(
-    local.shared_vpc_host_base_permissions,
-    local.enable_psc_host ? local.shared_vpc_host_psc_permissions : [],
-  )
 
   # Under Shared VPC, GKE creates its firewall rules in the host project (the
   # cluster's network lives there), but the service project's GKE service agent
@@ -76,16 +58,15 @@ data "google_project" "service" {
 }
 
 # Permissions ClickHouse needs in the Shared VPC host project: observe the
-# brought network/subnet, plus (when PrivateLink is enabled) manage the PSC NAT
-# subnet. The exact permission set is assembled in locals from the base +
-# optional PSC groups.
+# brought network/subnet and use the customer-provided PrivateLink PSC NAT
+# subnet. Read + use only; nothing here writes to the host project.
 resource "google_project_iam_custom_role" "clickhouse_shared_vpc_host_role" {
   count = local.shared_vpc ? 1 : 0
 
   project     = var.shared_vpc_host_project_id
   role_id     = "clickhouseSharedVPCHostRole"
   title       = "ClickHouse Shared VPC Host Role"
-  description = "Role to allow ClickHouse Cloud to observe the Shared VPC host network/subnet (and manage the PrivateLink PSC NAT subnet when enabled)"
+  description = "Role to allow ClickHouse Cloud to observe the Shared VPC host network/subnet and use the customer-provided PrivateLink PSC NAT subnet"
   permissions = local.shared_vpc_host_permissions
 }
 

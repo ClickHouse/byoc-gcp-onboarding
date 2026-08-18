@@ -48,7 +48,6 @@ module "clickhouse_onboarding" {
   shared_vpc_host_project_id        = "replace-with-your-shared-vpc-host-project-id"
   shared_vpc_host_subnet_region     = "us-central1"
   shared_vpc_host_private_subnet_id = "replace-with-your-host-subnet-name"
-  enable_shared_vpc_private_link    = true # only if you will use ClickHouse Private Service Connect (PrivateLink)
 }
 ```
 
@@ -56,7 +55,7 @@ Replace `<version>` with the latest tag from the module's
 [releases page](https://github.com/ClickHouse/terraform-byoc-onboarding/releases)
 — always use the latest release.
 
-By default the host project grants are read-only (observe the brought network/subnet); GKE consumes the host subnet via a `compute.networkUser` binding. Set `enable_shared_vpc_private_link = true` to additionally grant the host-project permissions needed to manage the PrivateLink PSC NAT subnet (subnets in a Shared VPC belong to the host project). Leave it `false` to keep the host-project permission surface minimal.
+The host project grants are read and use only — ClickHouse never writes to the host project. It observes the brought network and subnet, and uses the PrivateLink PSC NAT subnet you pre-create there (`compute.subnetworks.use`), which is what lets the service attachment in the service project reference it. GKE consumes the host node subnet via a separate `compute.networkUser` binding.
 
 Because a GKE cluster on a Shared VPC has its network in the host project, GKE also creates its firewall rules there — the master→node rule (kubelet/webhook ports) and the load-balancer health-check rules. The module therefore enables the Container API on the host project (so the host project's GKE service agent exists) and grants the service project's GKE service agent a scoped firewall role (`compute.firewalls.*` + `compute.networks.updatePolicy`) in the host project. Without this, admission webhooks and metrics-server degrade and internal load balancers (including the PrivateLink PSC ingress) never become healthy.
 
@@ -64,6 +63,7 @@ Because a GKE cluster on a Shared VPC has its network in the host project, GKE a
 
 - The host project must already be enabled as a [Shared VPC host](https://cloud.google.com/vpc/docs/provisioning-shared-vpc) and the service project (`project_id`) attached to it. This is an org-level operation (`compute.xpnAdmin`) and is **not** performed by this module.
 - The credentials running this module must have IAM admin on **both** the service project (`project_id`) and the host project (`shared_vpc_host_project_id`).
+- If you will use ClickHouse Private Service Connect (PrivateLink), create the PSC NAT subnet in the host project yourself, in the same region and network as the node subnet, with `purpose = PRIVATE_SERVICE_CONNECT` and a primary range of at least /29. ClickHouse only reads and uses it; it will not create it for you. Give its name to ClickHouse when you enable PrivateLink.
 
 ## Inputs
 
@@ -75,8 +75,6 @@ Because a GKE cluster on a Shared VPC has its network in the host project, GKE a
 | shared_vpc_host_project_id | (Optional) The GCP project ID of the Shared VPC host project, when the VPC you bring lives in a different project than `project_id`. Leave empty for the standard same-project setup. When set, `shared_vpc_host_subnet_region` and `shared_vpc_host_private_subnet_id` are required | string | `""` | no |
 | shared_vpc_host_subnet_region | (Optional) The region of the Shared VPC host subnet. Required only when `shared_vpc_host_project_id` is set | string | `""` | no |
 | shared_vpc_host_private_subnet_id | (Optional) The name of the existing Shared VPC host subnet used for GKE nodes. Required only when `shared_vpc_host_project_id` is set | string | `""` | no |
-| enable_shared_vpc_private_link | (Optional) Set to true if you will use ClickHouse Private Service Connect (PrivateLink) with this Shared VPC. Grants the additional host-project permissions to manage the PSC NAT subnet. Only takes effect when `shared_vpc_host_project_id` is set | bool | `false` | no |
-
 ## Outputs
 
 | Name | Description |
@@ -107,7 +105,7 @@ Because a GKE cluster on a Shared VPC has its network in the host project, GKE a
 | google_project_iam_member.clickhouse_sa_roles["storage_role"] | Grants `clickhouseStorageRole` to ClickHouse Management Service Account |
 | google_project_iam_member.clickhouse_sa_roles["iam_role"] | Grants `clickhouseIamRole` to ClickHouse Management Service Account |
 | google_service_account_iam_binding.impersonation_binding | Allows ClickHouse Crossplane Service Account to impersonate ClickHouse Management Service Account |
-| google_project_iam_custom_role.clickhouse_shared_vpc_host_role | [Shared VPC] Role to observe the host network/subnet, plus manage the PrivateLink PSC NAT subnet when `enable_shared_vpc_private_link` is true |
+| google_project_iam_custom_role.clickhouse_shared_vpc_host_role | [Shared VPC] Role to observe the host network/subnet and use the customer-provided PrivateLink PSC NAT subnet (read + use only) |
 | google_project_iam_member.clickhouse_sa_shared_vpc_host_role | [Shared VPC] Grants `clickhouseSharedVPCHostRole` to ClickHouse Management Service Account in the host project |
 | google_project_service.container | [Shared VPC] Enables the Container API on the service project so its GKE service agent exists |
 | google_project_iam_member.gke_host_service_agent_user | [Shared VPC] Grants `roles/container.hostServiceAgentUser` to the service project's GKE service agent on the host project |
