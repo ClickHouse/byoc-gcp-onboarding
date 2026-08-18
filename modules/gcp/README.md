@@ -57,7 +57,7 @@ Replace `<version>` with the latest tag from the module's
 [releases page](https://github.com/ClickHouse/terraform-byoc-onboarding/releases)
 — always use the latest release.
 
-The host project grants are read and use only — ClickHouse never writes to the host project. It observes the brought network and subnet, and uses the PrivateLink PSC NAT subnet you pre-create there (`compute.subnetworks.use`), which is what lets the service attachment in the service project reference it. GKE consumes the host node subnet via a separate `compute.networkUser` binding.
+The ClickHouse management SA's custom host role is read and use only: it observes the brought network and subnet, and uses the PrivateLink PSC NAT subnet you pre-create there (`compute.subnetworks.use`), allowing the service attachment in the service project to reference it. Separate grants let GKE consume the host node subnet and manage the firewall rules described below.
 
 Because a GKE cluster on a Shared VPC has its network in the host project, GKE also creates its firewall rules there — the master→node rule (kubelet/webhook ports) and the load-balancer health-check rules. The module therefore enables the Container API on the host project (so the host project's GKE service agent exists) and grants the service project's GKE service agent a scoped firewall role (`compute.firewalls.*` + `compute.networks.updatePolicy`) in the host project. Without this, admission webhooks and metrics-server degrade and internal load balancers (including the PrivateLink PSC ingress) never become healthy.
 
