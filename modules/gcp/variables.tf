@@ -16,7 +16,7 @@ variable "environment" {
 
 variable "include_vpc_write_permissions" {
   type        = bool
-  description = "(Optional) Whether to grant permissions to manage your VPC network topology (create/delete/modify of networks, routes, Cloud Routers, and subnet attributes). Set to `false` for bring-your-own-VPC onboarding, where you pre-create and manage the VPC, routes, and Cloud NAT yourself. Regardless of this setting, ClickHouse always retains read and use access to the VPC and manages the resources it owns inside it (the PrivateLink/PSC NAT subnet and service attachment, and ingress/static IP addresses in the service project)."
+  description = "(Optional) Whether to grant permissions to manage your VPC network topology (create/delete/modify of networks, routes, Cloud Routers, and subnet attributes). Set to `false` for bring-your-own-VPC onboarding, where you pre-create and manage the VPC, routes, Cloud NAT, and the PrivateLink/PSC NAT subnet yourself. Regardless of this setting, ClickHouse always retains read and use access to the VPC and manages the resources it owns inside it (the PrivateLink/PSC service attachment, and ingress/static IP addresses in the service project)."
   default     = true
 }
 
