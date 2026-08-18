@@ -93,6 +93,10 @@ Because a GKE cluster on a Shared VPC has its network in the host project, GKE a
 | google_service_account.clickhouse_management_sa | Service Account to manage ClickHouse resources in BYOC project |
 | google_project_service.cloud_resource_manager | Enables Cloud Resource Manager service API |
 | google_project_service.service_usage | Enables the Service Usage API so ClickHouse onboarding checks can read which APIs are enabled in your project |
+| google_project_service.compute_engine | Enables the Compute Engine API |
+| google_project_service.network_connectivity_api | Enables the Network Connectivity API |
+| google_project_service.iam_api | Enables the Identity and Access Management (IAM) API |
+| google_project_service.container_api | Enables the Kubernetes Engine API (also provisions the GKE service agent used by the Shared VPC grants) |
 | google_project_iam_custom_role.clickhouse_common_role | Role to allow ClickHouse Cloud common operations |
 | google_project_iam_custom_role.clickhouse_vpc_role | Role to allow ClickHouse Cloud to read and use VPC resources, and to create/manage the ClickHouse-owned subnets, addresses, and PrivateLink (PSC) it provisions within the VPC |
 | google_project_iam_custom_role.clickhouse_vpc_write_role | Role to allow ClickHouse Cloud to create/delete/modify the VPC network topology (networks, routes, Cloud Routers, subnet attributes); created only when `include_vpc_write_permissions` is true |
@@ -108,7 +112,6 @@ Because a GKE cluster on a Shared VPC has its network in the host project, GKE a
 | google_service_account_iam_binding.impersonation_binding | Allows ClickHouse Crossplane Service Account to impersonate ClickHouse Management Service Account |
 | google_project_iam_custom_role.clickhouse_shared_vpc_host_role | [Shared VPC] Role to observe the host network/subnet and use the customer-provided PrivateLink PSC NAT subnet (read + use only) |
 | google_project_iam_member.clickhouse_sa_shared_vpc_host_role | [Shared VPC] Grants `clickhouseSharedVPCHostRole` to ClickHouse Management Service Account in the host project |
-| google_project_service.container | [Shared VPC] Enables the Container API on the service project so its GKE service agent exists |
 | google_project_iam_member.gke_host_service_agent_user | [Shared VPC] Grants `roles/container.hostServiceAgentUser` to the service project's GKE service agent on the host project |
 | google_compute_subnetwork_iam_member.network_user | [Shared VPC] Grants `roles/compute.networkUser` on the host subnet to the GKE service agent, Google APIs SA, and ClickHouse Management Service Account |
 | google_project_service.container_host | [Shared VPC] Enables the Container API on the host project so its GKE service agent exists (creates cluster-lifecycle firewall rules in the host network) |

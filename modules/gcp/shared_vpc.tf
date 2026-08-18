@@ -78,21 +78,13 @@ resource "google_project_iam_member" "clickhouse_sa_shared_vpc_host_role" {
   member  = google_service_account.clickhouse_management_sa.member
 }
 
-# Enable the Container API on the service project so its GKE service agent is
-# created before we grant it access to the host network.
-resource "google_project_service" "container" {
-  count = local.shared_vpc ? 1 : 0
-
-  service            = "container.googleapis.com"
-  disable_on_destroy = false
-}
-
 # GKE Shared VPC: the service project's GKE service agent must be able to act on
-# the host project.
+# the host project. It depends on the service project's Container API, enabled
+# unconditionally in main.tf, so the agent exists before we grant it anything.
 resource "google_project_iam_member" "gke_host_service_agent_user" {
   count = local.shared_vpc ? 1 : 0
 
-  depends_on = [google_project_service.container]
+  depends_on = [google_project_service.container_api]
   project    = var.shared_vpc_host_project_id
   role       = "roles/container.hostServiceAgentUser"
   member     = local.gke_service_agent_member
@@ -118,7 +110,7 @@ resource "google_compute_subnetwork_iam_member" "network_user" {
     }
   }
 
-  depends_on = [google_project_service.container]
+  depends_on = [google_project_service.container_api]
   project    = var.shared_vpc_host_project_id
   region     = var.shared_vpc_host_subnet_region
   subnetwork = var.shared_vpc_host_private_subnet_id
@@ -156,7 +148,7 @@ resource "google_project_iam_custom_role" "clickhouse_gke_shared_vpc_firewall_ro
 resource "google_project_iam_member" "gke_shared_vpc_firewall" {
   count = local.shared_vpc ? 1 : 0
 
-  depends_on = [google_project_service.container]
+  depends_on = [google_project_service.container_api]
   project    = var.shared_vpc_host_project_id
   role       = google_project_iam_custom_role.clickhouse_gke_shared_vpc_firewall_role[0].id
   member     = local.gke_service_agent_member
