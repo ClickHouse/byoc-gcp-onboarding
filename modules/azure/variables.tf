@@ -8,3 +8,9 @@ variable "environment" {
     error_message = "Environment must be one of: production, staging, development"
   }
 }
+
+variable "include_tde_permissions" {
+  type        = bool
+  description = "(Optional) Whether to let ClickHouse provision the BYOC+TDE shared resources in this subscription: one TDE delegate managed identity and one default Key Vault + RSA key (KEK) per infra, wrapping the data-encryption keys of TDE-enabled ClickHouse instances. Deliberately grants no vault/key delete or purge and no cryptographic use of the keys — ClickHouse can never destroy or use your key material with this role. Defaults to false; enable before turning on TDE for an infra."
+  default     = false
+}

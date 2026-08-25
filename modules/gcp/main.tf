@@ -46,6 +46,14 @@ resource "google_project_service" "container_api" {
   disable_on_destroy = false
 }
 
+# Enable Cloud KMS API — only when BYOC+TDE is enabled, since that is the only ClickHouse
+# feature that provisions KMS resources in this project.
+resource "google_project_service" "cloudkms_api" {
+  count              = var.include_tde_permissions ? 1 : 0
+  service            = "cloudkms.googleapis.com"
+  disable_on_destroy = false
+}
+
 # Grant IAM roles to ClickHouse Management SA
 resource "google_project_iam_member" "clickhouse_sa_roles" {
   for_each = local.clickhouse_custom_roles

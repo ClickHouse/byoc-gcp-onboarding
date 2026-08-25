@@ -10,6 +10,9 @@ locals {
     var.include_vpc_write_permissions ? {
       vpc_write_role = google_project_iam_custom_role.clickhouse_vpc_write_role[0].id
     } : {},
+    var.include_tde_permissions ? {
+      tde_role = google_project_iam_custom_role.clickhouse_tde_role[0].id
+    } : {},
   )
   clickhouse_crossplane_sa_map = {
     "production" = [

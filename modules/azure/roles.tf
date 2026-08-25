@@ -1,10 +1,35 @@
+locals {
+  # BYOC+TDE control-plane actions: create and read the infra's default Key Vault (RBAC mode)
+  # holding the shared KEK. Deliberately NO vaults/delete and NO deletedVaults purge — key
+  # material must never be destroyable by ClickHouse's identity (the vault is orphaned on infra
+  # teardown and remains the customer's).
+  tde_keyvault_actions = [
+    "Microsoft.KeyVault/register/action",
+    "Microsoft.KeyVault/checkNameAvailability/read",
+    "Microsoft.KeyVault/locations/deletedVaults/read",
+    "Microsoft.KeyVault/vaults/read",
+    "Microsoft.KeyVault/vaults/write",
+  ]
+
+  # BYOC+TDE data-plane actions: manage the KEK inside the vault (keys are created through the
+  # Key Vault data plane, so control-plane actions alone are not enough). Deliberately NO
+  # keys/delete, NO keys/purge and NO cryptographic actions (encrypt/decrypt/wrap/unwrap) — only
+  # the TDE delegate identity gets Key Vault Crypto User on the key.
+  tde_keyvault_data_actions = [
+    "Microsoft.KeyVault/vaults/keys/read",
+    "Microsoft.KeyVault/vaults/keys/create/action",
+    "Microsoft.KeyVault/vaults/keys/update/action",
+    "Microsoft.KeyVault/vaults/keys/rotationpolicy/read",
+  ]
+}
+
 resource "azurerm_role_definition" "clickhouse_byoc_provisioner" {
   name        = "ClickHouse BYOC Provisioner (${var.environment})"
   scope       = "/subscriptions/${data.azurerm_client_config.current.subscription_id}"
   description = "Least-privilege custom role for ClickHouse to provision Azure BYOC infrastructure resources"
 
   permissions {
-    actions = [
+    actions = concat([
       # Resource Provider Registration
       "Microsoft.Network/register/action",
       "Microsoft.ContainerService/register/action",
@@ -104,9 +129,11 @@ resource "azurerm_role_definition" "clickhouse_byoc_provisioner" {
       "Microsoft.Authorization/roleAssignments/read",
       "Microsoft.Authorization/roleAssignments/write",
       "Microsoft.Authorization/roleAssignments/delete",
-    ]
+    ], var.include_tde_permissions ? local.tde_keyvault_actions : [])
 
     not_actions = []
+
+    data_actions = var.include_tde_permissions ? local.tde_keyvault_data_actions : []
   }
 
   assignable_scopes = [

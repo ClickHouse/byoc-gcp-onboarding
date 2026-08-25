@@ -37,3 +37,9 @@ variable "shared_vpc_host_private_subnet_id" {
   description = "(Optional) The name of the existing Shared VPC host subnet used for GKE nodes. Required only when `shared_vpc_host_project_id` is set."
   default     = ""
 }
+
+variable "include_tde_permissions" {
+  type        = bool
+  description = "(Optional) Whether to let ClickHouse provision the BYOC+TDE shared resources in this project: one TDE delegate service account and one default Cloud KMS key (KEK) per infra, wrapping the data-encryption keys of TDE-enabled ClickHouse instances. Grants Cloud KMS key management WITHOUT any destroy permission — ClickHouse can never destroy key material. Defaults to false; enable before turning on TDE for an infra."
+  default     = false
+}
