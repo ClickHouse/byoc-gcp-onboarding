@@ -77,6 +77,7 @@ Because a GKE cluster on a Shared VPC has its network in the host project, GKE a
 | shared_vpc_host_project_id | (Optional) The GCP project ID of the Shared VPC host project, when the VPC you bring lives in a different project than `project_id`. Leave empty for the standard same-project setup. When set, `shared_vpc_host_subnet_region` and `shared_vpc_host_private_subnet_id` are required | string | `""` | no |
 | shared_vpc_host_subnet_region | (Optional) The region of the Shared VPC host subnet. Required only when `shared_vpc_host_project_id` is set | string | `""` | no |
 | shared_vpc_host_private_subnet_id | (Optional) The name of the existing Shared VPC host subnet used for GKE nodes. Required only when `shared_vpc_host_project_id` is set | string | `""` | no |
+| include_tde_permissions | (Optional) Whether to let ClickHouse provision the BYOC+TDE shared resources in this project: one TDE delegate service account and one default Cloud KMS key (KEK) per infra. Grants Cloud KMS key management without any destroy permission — ClickHouse can never destroy key material. Set to `true` before enabling TDE for an infra | bool | `false` | no |
 
 ## Outputs
 
@@ -100,15 +101,18 @@ Because a GKE cluster on a Shared VPC has its network in the host project, GKE a
 | google_project_service.network_connectivity_api | Enables the Network Connectivity API |
 | google_project_service.iam_api | Enables the Identity and Access Management (IAM) API |
 | google_project_service.container_api | Enables the Kubernetes Engine API (also provisions the GKE service agent used by the Shared VPC grants) |
+| google_project_service.cloudkms_api | Enables the Cloud KMS API; created only when `include_tde_permissions` is true |
 | google_project_iam_custom_role.clickhouse_common_role | Role to allow ClickHouse Cloud common operations |
 | google_project_iam_custom_role.clickhouse_vpc_role | Role to allow ClickHouse Cloud to read and use VPC resources, and to create/manage the ClickHouse-owned addresses and PrivateLink (PSC) service attachment it provisions within the VPC |
 | google_project_iam_custom_role.clickhouse_vpc_write_role | Role to allow ClickHouse Cloud to create/delete/modify the VPC network topology (networks, routes, Cloud Routers, subnets); created only when `include_vpc_write_permissions` is true |
 | google_project_iam_custom_role.clickhouse_cluster_role | Role to allow ClickHouse Cloud to manage cluster resources in your project |
 | google_project_iam_custom_role.clickhouse_storage_role | Role to allow ClickHouse Cloud to manage Object Storage resources in your project |
 | google_project_iam_custom_role.clickhouse_iam_role | Role to allow ClickHouse Cloud to manage IAM resources in your project |
+| google_project_iam_custom_role.clickhouse_tde_role | Role to allow ClickHouse Cloud to manage the BYOC+TDE key ring, default KEK and key IAM bindings (no destroy permissions); created only when `include_tde_permissions` is true |
 | google_project_iam_member.clickhouse_sa_roles["common_role"] | Grants `clickhouseCommonRole` to ClickHouse Management Service Account |
 | google_project_iam_member.clickhouse_sa_roles["vpc_role"] | Grants `clickhouseVPCRole` to ClickHouse Management Service Account |
 | google_project_iam_member.clickhouse_sa_roles["vpc_write_role"] | Grants `clickhouseVPCWriteRole` to ClickHouse Management Service Account; present only when `include_vpc_write_permissions` is true |
+| google_project_iam_member.clickhouse_sa_roles["tde_role"] | Grants `clickhouseTdeRole` to ClickHouse Management Service Account; present only when `include_tde_permissions` is true |
 | google_project_iam_member.clickhouse_sa_roles["cluster_role"] | Grants `clickhouseClusterRole` to ClickHouse Management Service Account |
 | google_project_iam_member.clickhouse_sa_roles["storage_role"] | Grants `clickhouseStorageRole` to ClickHouse Management Service Account |
 | google_project_iam_member.clickhouse_sa_roles["iam_role"] | Grants `clickhouseIamRole` to ClickHouse Management Service Account |

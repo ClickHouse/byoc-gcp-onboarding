@@ -681,3 +681,31 @@ resource "google_project_iam_custom_role" "clickhouse_iam_role" {
     "iam.roles.update",
   ]
 }
+
+# BYOC+TDE: lets ClickHouse provision and manage the infra's shared Cloud KMS resources — the
+# key ring, the default KEK, and the delegate's IAM bindings on the key. Deliberately excludes
+# every destructive permission (cryptoKeyVersions.destroy, keyRings/cryptoKeys have no delete):
+# ClickHouse can never destroy key material in your project. The delegate service account and its
+# impersonation bindings are covered by clickhouseIamRole.
+resource "google_project_iam_custom_role" "clickhouse_tde_role" {
+  count       = var.include_tde_permissions ? 1 : 0
+  role_id     = "clickhouseTdeRole"
+  title       = "ClickHouse TDE Role"
+  description = "Role to allow ClickHouse Cloud to manage the BYOC+TDE key ring, default KEK and key IAM bindings in your project (no destroy permissions)"
+  permissions = [
+    # Key rings
+    "cloudkms.keyRings.create",
+    "cloudkms.keyRings.get",
+    "cloudkms.keyRings.list",
+
+    # Crypto keys (create/read/update only — key material is not destroyable)
+    "cloudkms.cryptoKeys.create",
+    "cloudkms.cryptoKeys.get",
+    "cloudkms.cryptoKeys.list",
+    "cloudkms.cryptoKeys.update",
+
+    # Key IAM bindings for the TDE delegate (encrypter/decrypter + viewer)
+    "cloudkms.cryptoKeys.getIamPolicy",
+    "cloudkms.cryptoKeys.setIamPolicy",
+  ]
+}
