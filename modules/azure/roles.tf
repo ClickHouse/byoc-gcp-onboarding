@@ -19,7 +19,7 @@ locals {
     "Microsoft.KeyVault/vaults/keys/read",
     "Microsoft.KeyVault/vaults/keys/create/action",
     "Microsoft.KeyVault/vaults/keys/update/action",
-    "Microsoft.KeyVault/vaults/keys/rotationpolicy/read",
+    "Microsoft.KeyVault/vaults/keyrotationpolicies/read",
   ]
 }
 
